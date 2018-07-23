@@ -1,0 +1,15 @@
+{
+  "name": "safe-navigation-proxy",
+  "version": "0.1.0",
+  "description": "Proxy-based safe navigation",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [
+    "undefined",
+    "null",
+    "safe navigation",
+    "optional chaining"
+  ],
+  "author": "Clement Yan <yanclement94@gmail.com>",
+  "license": "MIT"
+}
