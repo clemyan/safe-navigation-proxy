@@ -1,5 +1,6 @@
 devDependencies:
   babel-helper-evaluate-path: 0.4.3
+  babel-plugin-transform-es2015-modules-commonjs: 6.26.2
   eslint: 5.2.0
   jest: 23.4.1
   jest-runner-eslint: 0.6.0
@@ -475,6 +476,15 @@ packages:
     dev: true
     resolution:
       integrity: sha1-/WU28rzhODb/o6VFjEkDpZe7O/U=
+  /babel-plugin-transform-es2015-modules-commonjs/6.26.2:
+    dependencies:
+      babel-plugin-transform-strict-mode: 6.24.1
+      babel-runtime: 6.26.0
+      babel-template: 6.26.0
+      babel-types: 6.26.0
+    dev: true
+    resolution:
+      integrity: sha512-CV9ROOHEdrjcwhIaJNBGMBCodN+1cfkwtM1SbUHmvyy35KGT7fohbpOxkE2uLz1o6odKK2Ck/tz47z+VqQfi9Q==
   /babel-plugin-transform-inline-consecutive-adds/0.4.3:
     dev: true
     resolution:
@@ -519,6 +529,13 @@ packages:
     dev: true
     resolution:
       integrity: sha1-9ir+CWyrDh9ootdT/fKDiIRxzrk=
+  /babel-plugin-transform-strict-mode/6.24.1:
+    dependencies:
+      babel-runtime: 6.26.0
+      babel-types: 6.26.0
+    dev: true
+    resolution:
+      integrity: sha1-1fr3qleKZbvlkc9e2uBKDGcCB1g=
   /babel-plugin-transform-undefined-to-void/6.9.4:
     dev: true
     resolution:
@@ -4497,6 +4514,7 @@ shrinkwrapMinorVersion: 8
 shrinkwrapVersion: 3
 specifiers:
   babel-helper-evaluate-path: ^0.4.3
+  babel-plugin-transform-es2015-modules-commonjs: ^6.26.2
   eslint: ^5.2.0
   jest: ^23.4.1
   jest-runner-eslint: ^0.6.0

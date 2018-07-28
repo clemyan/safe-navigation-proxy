@@ -5,14 +5,16 @@
   "main": "dist/cjs/index.js",
   "module": "dist/es/index.js",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watchAll",
+    "test": "jest --config config/jest.config.js",
+    "test:test": "jest --config config/jest.test.config.js",
+    "test:lint": "jest --config config/jest.lint.config.js",
+    "test:watch": "npm run --silent test:test -- --watchAll",
     "lint": "eslint **/*.js",
     "lint:cli": "npm run --silent lint || exit 0",
     "lint:fix": "npm run --silent lint -- --fix || exit 0",
-    "build": "rollup -c",
-    "build:watch": "rollup -c --watch",
-    "prepublish": "npm run --silent build"
+    "build": "rollup -c config/rollup.config.js",
+    "build:watch": "npm run --silent build -- --watch",
+    "prepublish": "npm run --silent build && npm test"
   },
   "keywords": [
     "undefined",
@@ -24,6 +26,7 @@
   "license": "MIT",
   "devDependencies": {
     "babel-helper-evaluate-path": "^0.4.3",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
     "eslint": "^5.2.0",
     "jest": "^23.4.1",
     "jest-runner-eslint": "^0.6.0",
