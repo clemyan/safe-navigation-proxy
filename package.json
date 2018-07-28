@@ -4,6 +4,9 @@
   "description": "Proxy-based safe navigation",
   "main": "dist/cjs/index.js",
   "module": "dist/es/index.js",
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "test": "jest --config config/jest.config.js",
     "test:test": "jest --config config/jest.test.config.js",
