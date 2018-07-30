@@ -8,9 +8,9 @@ This is a WIP
 
 For the time being, you must clone/download the repo and build it yourself.
 
-Install dependencies with `npm`
+First, install all dependencies. Dependencies are originally managed using [`pnpm`](https://pnpm.js.org/), though `npm` and `yarn` should work fine.
 ```
-$ npm install
+$ npm install # or yarn install or pnpm install
 ```
 which should also run the build. If not, run
 ```
