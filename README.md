@@ -26,9 +26,9 @@ Files for other module loader styles are also available in the respective direct
 ```JavaScript
 import $ from 'safe-navigation-proxy'
 
-const obj = {a: {b: {c: 1}}}
-console.log($(obj).a.b.c.$()) // 1
-console.log($(obj).non.existent.property.$()) // undefined
+const proxy = $({a: {b: {c: 1}}})
+console.log(proxy.a.b.c.$()) // 1
+console.log(proxy.non.existent.property.$()) // undefined
 ```
 
 ## Documentation
@@ -51,10 +51,21 @@ To retrive values from safe navigation proxies, they have a method keyed by the 
 
 The unwrap method takes a default value argument, which will be returned if the proxy is a nil reference. Unwrapping a non-nil proxy returns the contained value, and the argument is ignored. Note that the argument is `undefined` if none is explicitly passed.
 
+Note that this allows safe navigation proxies to be used for nullish-coalescing
+
 ```JavaScript
-const proxy = $({existent: {property: 1}})
-console.log(proxy.existent.property[$.$]()) // 1
-console.log(proxy.existent.property.$()) // 1
+console.log($(undefined).$(2)) // 2
+console.log($(null).$(2)) // 2
+console.log($(1).$(2)) // 1
+```
+
+### Get
+
+Property access is the primary use case of safe navigation proxies. Getting a property of a nil reference returns a nil reference to that property. Getting a property of a non-nil proxy returns a safe navigation proxy constructed from the accessing the corresponding property of the contained value. That means, since `undefined` is nullish by default, accessing an undefined property via a safe navigation proxy returns a nil reference.
+
+```JavaScript
+const proxy = $({a: {b: {c: 1}}})
+console.log(proxy.a.b.c.$()) // 1
 console.log(proxy.non.existent.property.$(2)) // 2
 console.log(proxy.non.existent.property.$()) // undefined
 ```
