@@ -7,6 +7,12 @@
   "files": [
     "dist/"
   ],
+  "homepage": "https://github.com/clemyan/safe-navigation-proxy",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clemyan/safe-navigation-proxy.git"
+  },
+  "bugs": "https://github.com/clemyan/safe-navigation-proxy/issues",
   "scripts": {
     "test": "jest --config config/jest.config.js",
     "test:test": "jest --config config/jest.test.config.js",
