@@ -3,12 +3,13 @@ const symbols = {
 }
 
 const vHandler = {
-	get(target, prop, receiver) {
+	get(target, prop) {
 		if(prop === symbols.unwrap || prop === '$') {
 			// eslint-disable-next-line no-unused-vars
 			return def => target()
 		}
-		return safeNav(Reflect.get(Object(target()), prop, receiver))
+		const value = Object(target())
+		return safeNav(Reflect.get(value, prop, value))
 	}
 }
 
@@ -21,19 +22,19 @@ const nHandler = {
 	}
 }
 
-function safeNav(val, base, name) {
-	if(val === undefined || val === null) {
+function safeNav(value, base, name) {
+	if(value === undefined || value === null) {
 		return nil(base, name)
 	}
 
-	return new Proxy(() => val, vHandler)
+	return new Proxy(() => value, vHandler)
 }
 
 function nil() {
 	return new Proxy(() => nil(undefined, undefined), nHandler)
 }
 
-const $ = val => safeNav(val, undefined, undefined)
+const $ = value => safeNav(value, undefined, undefined)
 $.$ = symbols.unwrap
 
 export default $

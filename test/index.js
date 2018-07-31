@@ -114,17 +114,36 @@ describe("Wrapping & unwrapping", () => {
 })
 
 describe("Basic get", () => {
-	const obj = {a: {b: {c: {d: {e: 1, f: null}}}}}
+	const obj = {a: {b: {c: {d: {
+		e: 1,
+		f: null,
+		get g(){ return 2 },
+		get h(){ return this },
+		get i(){ return null },
+	}}}}}
+	const proxy = $(obj)
 
 	it("should return proxy with property value for existing property", () => {
-		expect($(obj).a.b.c.d.e).toHaveValue(1)
+		expect(proxy.a.b.c.d.e).toHaveValue(1)
 	})
 
 	it("should return nil reference for non-existent property", () => {
-		expect($(obj).u.v.w.x.y.z).toBeNil()
+		expect(proxy.u.v.w.x.y.z).toBeNil()
 	})
 
 	it("should return nil reference for null property", () => {
-		expect($(obj).a.b.c.d.f).toBeNil()
+		expect(proxy.a.b.c.d.f).toBeNil()
+	})
+
+	it("should return proxy with getter return value", () => {
+		expect(proxy.a.b.c.d.g).toHaveValue(2)
+	})
+
+	it("should call getter with correct context", () => {
+		expect(proxy.a.b.c.d.h).toHaveValue(obj.a.b.c.d)
+	})
+
+	it("should return nil reference for getter returning null", () => {
+		expect(proxy.a.b.c.d.i).toBeNil()
 	})
 })
