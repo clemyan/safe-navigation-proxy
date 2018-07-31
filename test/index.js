@@ -127,8 +127,8 @@ describe("Basic get", () => {
 		expect(proxy.a.b.c.d.e).toHaveValue(1)
 	})
 
-	it("should return nil reference for non-existent property", () => {
-		expect(proxy.u.v.w.x.y.z).toBeNil()
+	it("should return nil reference for undefined property", () => {
+		expect(proxy.v.w.x.y.z).toBeNil()
 	})
 
 	it("should return nil reference for null property", () => {
@@ -145,5 +145,57 @@ describe("Basic get", () => {
 
 	it("should return nil reference for getter returning null", () => {
 		expect(proxy.a.b.c.d.i).toBeNil()
+	})
+})
+
+describe("Basic set", () => {
+	let obj, proxy
+	const setValue = jest.fn()
+	const setContext = jest.fn()
+	beforeEach(() => {
+		obj = {
+			a: {b: {c: {d: {
+				set e(value){
+					setValue(value)
+					setContext(this)
+				}
+			}}}},
+			f: null
+		}
+		proxy = $(obj)
+		setValue.mockClear()
+		setContext.mockClear()
+	})
+
+	it("should set normally for existing base value", () => {
+		const to = {}
+		proxy.a.b.c.d.z = to
+		expect(obj.a.b.c.d.z).toBe(to)
+	})
+
+	it("should propagate set for undefined nil", () => {
+		const to = {}
+		proxy.v.w.x.y.z = to
+		expect(obj.v.w.x.y.z).toBe(to)
+	})
+
+	it("should propagate set for null nil", () => {
+		const to = {}
+		proxy.f.w.x.y.z = to
+		expect(obj.f.w.x.y.z).toBe(to)
+	})
+
+	it("should set normally using setter", () => {
+		const to = {}
+		proxy.a.b.c.d.e = to
+		expect(setValue).toBeCalledTimes(1)
+		expect(setValue).toBeCalledWith(to)
+	})
+
+	it("should call setter with correct context", () => {
+		const to = {}
+		proxy.a.b.c.d.e = to
+		expect(setContext).toBeCalledTimes(1)
+		expect(setContext).toBeCalledWith(obj.a.b.c.d)
 	})
 })

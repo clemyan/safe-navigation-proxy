@@ -9,29 +9,38 @@ const vHandler = {
 			return def => target()
 		}
 		const value = Object(target())
-		return safeNav(Reflect.get(value, prop, value))
+		return safeNav(Reflect.get(value, prop, value), value, prop)
+	},
+	set(target, prop, to) {
+		const value = Object(target())
+		return Reflect.set(value, prop, to, value)
 	}
 }
 
 const nHandler = {
-	get(target, prop) {
+	get(target, prop, proxy) {
 		if(prop === symbols.unwrap || prop === '$') {
 			return def => def
 		}
-		return nil(undefined, undefined)
+		return $N(proxy, prop)
+	},
+	set(target, prop, to) {
+		const {base, name} = target()
+		const obase = Object(base)
+		return Reflect.set(obase, name, {[prop]: to}, obase)
 	}
 }
 
 function safeNav(value, base, name) {
 	if(value === undefined || value === null) {
-		return nil(base, name)
+		return $N(base, name)
 	}
 
 	return new Proxy(() => value, vHandler)
 }
 
-function nil() {
-	return new Proxy(() => nil(undefined, undefined), nHandler)
+function $N(base, name) {
+	return new Proxy(() => ({base, name}), nHandler)
 }
 
 const $ = value => safeNav(value, undefined, undefined)
