@@ -114,17 +114,17 @@ describe("Wrapping & unwrapping", () => {
 })
 
 describe("Basic get", () => {
-	const obj = {a: {b: {c: {d: {
-		e: 1,
-		f: null,
-		get g(){ return 2 },
-		get h(){ return this },
-		get i(){ return null },
-	}}}}}
+	const obj = {n: {e: {s: {t: {e: {d: {
+		one: 1,
+		null: null,
+		get getTwo(){ return 2 },
+		get getThis(){ return this },
+		get getNull(){ return null },
+	}}}}}}}
 	const proxy = $(obj)
 
 	it("should return proxy with property value for existing property", () => {
-		expect(proxy.a.b.c.d.e).toHaveValue(1)
+		expect(proxy.n.e.s.t.e.d.one).toHaveValue(1)
 	})
 
 	it("should return nil reference for undefined property", () => {
@@ -132,19 +132,19 @@ describe("Basic get", () => {
 	})
 
 	it("should return nil reference for null property", () => {
-		expect(proxy.a.b.c.d.f).toBeNil()
+		expect(proxy.n.e.s.t.e.d.null).toBeNil()
 	})
 
 	it("should return proxy with getter return value", () => {
-		expect(proxy.a.b.c.d.g).toHaveValue(2)
+		expect(proxy.n.e.s.t.e.d.getTwo).toHaveValue(2)
 	})
 
 	it("should call getter with correct context", () => {
-		expect(proxy.a.b.c.d.h).toHaveValue(obj.a.b.c.d)
+		expect(proxy.n.e.s.t.e.d.getThis).toHaveValue(obj.n.e.s.t.e.d)
 	})
 
 	it("should return nil reference for getter returning null", () => {
-		expect(proxy.a.b.c.d.i).toBeNil()
+		expect(proxy.n.e.s.t.e.d.getNull).toBeNil()
 	})
 })
 
@@ -154,13 +154,13 @@ describe("Basic set", () => {
 	const setContext = jest.fn()
 	beforeEach(() => {
 		obj = {
-			a: {b: {c: {d: {
-				set e(value){
+			n: {e: {s: {t: {e: {d: {
+				set setter(value){
 					setValue(value)
 					setContext(this)
 				}
-			}}}},
-			f: null
+			}}}}}},
+			null: null
 		}
 		proxy = $(obj)
 		setValue.mockClear()
@@ -169,33 +169,33 @@ describe("Basic set", () => {
 
 	it("should set normally for existing base value", () => {
 		const to = {}
-		proxy.a.b.c.d.z = to
-		expect(obj.a.b.c.d.z).toBe(to)
+		proxy.n.e.s.t.e.d.x = to
+		expect(obj.n.e.s.t.e.d.x).toBe(to)
 	})
 
 	it("should propagate set for undefined nil", () => {
 		const to = {}
-		proxy.v.w.x.y.z = to
-		expect(obj.v.w.x.y.z).toBe(to)
+		proxy.a.b.c.d.e = to
+		expect(obj.a.b.c.d.e).toBe(to)
 	})
 
 	it("should propagate set for null nil", () => {
 		const to = {}
-		proxy.f.w.x.y.z = to
-		expect(obj.f.w.x.y.z).toBe(to)
+		proxy.null.a.b.c.d = to
+		expect(obj.null.a.b.c.d).toBe(to)
 	})
 
 	it("should set normally using setter", () => {
 		const to = {}
-		proxy.a.b.c.d.e = to
+		proxy.n.e.s.t.e.d.setter = to
 		expect(setValue).toBeCalledTimes(1)
 		expect(setValue).toBeCalledWith(to)
 	})
 
 	it("should call setter with correct context", () => {
 		const to = {}
-		proxy.a.b.c.d.e = to
+		proxy.n.e.s.t.e.d.setter = to
 		expect(setContext).toBeCalledTimes(1)
-		expect(setContext).toBeCalledWith(obj.a.b.c.d)
+		expect(setContext).toBeCalledWith(obj.n.e.s.t.e.d)
 	})
 })
