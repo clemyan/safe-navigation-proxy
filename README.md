@@ -35,21 +35,38 @@ console.log(proxy.non.existent.property.$()) // undefined
 
 ### Safe navigaion proxies
 
-Safe navigation proxies are, as you may have guessed, the basis of `safe-navigation-proxy`. A safe navigation proxy either contains a value, or is a nil reference. This section specifies the operations on and the behavior of safe navigation proxies.
+Safe navigation proxies are, as you may have guessed, the basis of `safe-navigation-proxy`. As shown in the examples above, they allow access and other operations on nested properties of objects without throwing `TypeError`s for `undefined` or `null` intermediate values (a.k.a. safe navigation).
+
+A safe navigation proxy either
+
+- is a nil reference, denoted as `$N` or `$N(base,name)` below; or
+- contains a value. They are denoted `$V` or `$V(value)` below.
+
+This section specifies the operations on and the behavior of safe navigation proxies.
 
 The test suite in the `test` directory is also a pretty thorough specification of `safe-navigation-proxy`.
 
 ### Construction
 
-The default export of `safe-navigation-proxy` is a function that constructs a safe navigation proxy. This function is documented as `$` below. But note that the revealing module (`dist/index.js`) and the UMD module (in revealing module mode) distributables assign this function to the global variable `safeNav` instead of `$` to prevent conflict with other libraries.
+The default export of `safe-navigation-proxy` is a function that constructs a safe navigation proxy. This function is denoted as `$` below. But note that the revealing module (`dist/index.js`) and the UMD module (in revealing module mode) distributables assign this function to the global variable `safeNav` instead of `$` to prevent conflict with other libraries.
 
-`$(value)` returns a safe navigation proxy constructed from `value`. That means a nil reference if value is nullish (by default, `undefined` and `null` are nullish), or a proxy containing that value otherwise.
+`$(value)` returns `value` wrapped in a safe navigation proxy. That means a nil reference if `value` is nullish (by default, `undefined` and `null` are nullish), or a proxy containing that value otherwise.
+
+That is
+
+- `$(value) -> $N` if `value` is nullish
+- `$(value) -> $V(value)` otherwise
 
 ### Unwrapping
 
 To retrive values from safe navigation proxies, they have a method keyed by the symbol `$.$`. By default, this method is also be keyed by the property name `$`.
 
 The unwrap method takes a default value argument, which will be returned if the proxy is a nil reference. Unwrapping a non-nil proxy returns the contained value, and the argument is ignored. Note that the argument is `undefined` if none is explicitly passed.
+
+That is,
+
+- `$N.$(def) -> def`
+- `$V(value).$(def) -> value`
 
 Note that this allows safe navigation proxies to be used for nullish-coalescing
 
@@ -61,7 +78,14 @@ console.log($(1).$(2)) // 1
 
 ### Get
 
-Property access is the primary use case of safe navigation proxies. Getting a property of a nil reference returns a nil reference to that property. Getting a property of a non-nil proxy returns a safe navigation proxy constructed from the accessing the corresponding property of the contained value. That means, since `undefined` is nullish by default, accessing an undefined property via a safe navigation proxy returns a nil reference.
+Property access is the primary use case of safe navigation proxies. Getting a property of a nil reference returns a nil reference to that property. Getting a property of a non-nil proxy returns the result of accessing the corresponding property of the contained value, wrapped in a safe navigation proxy.
+
+That is, roughly
+
+- `$N(base,name).prop -> $N(base[name], prop)`
+- `$V(value).prop -> $(value[prop])`
+
+Since `undefined` is nullish by default, accessing an undefined property via a safe navigation proxy returns a nil reference.
 
 ```JavaScript
 const proxy = $({a: {b: {c: 1}}})
