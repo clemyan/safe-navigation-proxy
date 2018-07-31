@@ -54,8 +54,8 @@ The default export of `safe-navigation-proxy` is a function that constructs a sa
 
 That is
 
-- `$(value) -> $N` if `value` is nullish
-- `$(value) -> $V(value)` otherwise
+- `$(value)` returns `$N` if `value` is nullish
+- `$(value)` returns `$V(value)` otherwise
 
 ### Unwrapping
 
@@ -65,8 +65,8 @@ The unwrap method takes a default value argument, which will be returned if the 
 
 That is,
 
-- `$N.$(def) -> def`
-- `$V(value).$(def) -> value`
+- `$N.$(def)` returns `def`
+- `$V(value).$(def)` returns `value`
 
 Note that this allows safe navigation proxies to be used for nullish-coalescing
 
@@ -82,8 +82,9 @@ Property access is the primary use case of safe navigation proxies. Getting a pr
 
 That is, roughly
 
-- `$N(base,name).prop -> $N(base[name], prop)`
-- `$V(value).prop -> $(value[prop])`
+- `$N(base,name).prop` returns `$N($N(base,name), prop)`
+- `$V(value).prop` returns `$N(value,prop)` if `value.prop` is nullish
+- `$V(value).prop` returns `$V(value.prop)` if `value.prop` is not nullish
 
 Since `undefined` is nullish by default, accessing an undefined property via a safe navigation proxy returns a nil reference.
 
