@@ -1,35 +1,39 @@
 const symbols = {
-	get: Symbol('$')
+	unwrap: Symbol('$')
 }
 
-function safeNav(val, baseVal, refName){
-	if(val === undefined || val === null){
-		return nil(baseVal, refName)
+const vHandler = {
+	get(target, prop, receiver) {
+		if(prop === symbols.unwrap || prop === '$') {
+			// eslint-disable-next-line no-unused-vars
+			return def => target()
+		}
+		return safeNav(Reflect.get(Object(target()), prop, receiver))
+	}
+}
+
+const nHandler = {
+	get(target, prop) {
+		if(prop === symbols.unwrap || prop === '$') {
+			return def => def
+		}
+		return nil(undefined, undefined)
+	}
+}
+
+function safeNav(val, base, name) {
+	if(val === undefined || val === null) {
+		return nil(base, name)
 	}
 
-	return new Proxy(() => val, {
-		get(target, prop, receiver){
-			if(prop === symbols.get || prop === '$'){
-				// eslint-disable-next-line no-unused-vars
-				return def => val
-			}
-			return safeNav(Reflect.get(Object(val), prop, receiver))
-		},
-	})
+	return new Proxy(() => val, vHandler)
 }
 
-function nil(){
-	return new Proxy(() => nil(undefined, undefined), {
-		get(target, prop){
-			if(prop === symbols.get || prop === '$'){
-				return def => def
-			}
-			return nil(undefined, undefined)
-		},
-	})
+function nil() {
+	return new Proxy(() => nil(undefined, undefined), nHandler)
 }
 
 const $ = val => safeNav(val, undefined, undefined)
-$.$ = symbols.get
+$.$ = symbols.unwrap
 
 export default $
