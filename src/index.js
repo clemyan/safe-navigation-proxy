@@ -14,6 +14,10 @@ const vHandler = {
 	set(target, prop, to) {
 		const value = Object(target())
 		return Reflect.set(value, prop, to, value)
+	},
+	apply(target, proxy, args) {
+		const context = proxy ? proxy[symbols.unwrap]() : proxy
+		return safeNav(Reflect.apply(target(), context, args))
 	}
 }
 
@@ -28,6 +32,9 @@ const nHandler = {
 		const {base, name} = target()
 		const obase = Object(base)
 		return Reflect.set(obase, name, {[prop]: to}, obase)
+	},
+	apply() {
+		return $N()
 	}
 }
 
@@ -43,7 +50,7 @@ function $N(base, name) {
 	return new Proxy(() => ({base, name}), nHandler)
 }
 
-const $ = value => safeNav(value, undefined, undefined)
+const $ = value => safeNav(value)
 $.$ = symbols.unwrap
 
 export default $

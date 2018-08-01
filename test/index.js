@@ -128,7 +128,7 @@ describe("Basic get", () => {
 	})
 
 	it("should return nil reference for undefined property", () => {
-		expect(proxy.v.w.x.y.z).toBeNil()
+		expect(proxy.u.v.w.x.y.z).toBeNil()
 	})
 
 	it("should return nil reference for null property", () => {
@@ -197,5 +197,50 @@ describe("Basic set", () => {
 		proxy.n.e.s.t.e.d.setter = to
 		expect(setContext).toBeCalledTimes(1)
 		expect(setContext).toBeCalledWith(obj.n.e.s.t.e.d)
+	})
+})
+
+describe("Basic apply", () => {
+	const func = jest.fn()
+	const obj = {n: {e: {s: {t: {e: {d: {func, notFunc: 1}}}}}}}
+	const proxy = $(obj)
+
+	beforeEach(() => {
+		func.mockReset()
+	})
+
+	it("should call contained value", () => {
+		const arg1 = {}
+		const arg2 = {}
+		proxy.n.e.s.t.e.d.func(arg1, arg2)
+		expect(func).toBeCalledTimes(1)
+		expect(func).toBeCalledWith(arg1, arg2)
+	})
+
+	it("should call contained value with correct context", () => {
+		func.mockReturnThis()
+		expect(proxy.n.e.s.t.e.d.func()).toHaveValue(obj.n.e.s.t.e.d)
+	})
+
+	it("should return proxy with non-nullish return value", () => {
+		const value = {}
+		func.mockReturnValueOnce(value)
+		expect(proxy.n.e.s.t.e.d.func()).toHaveValue(value)
+	})
+
+	it("should return nil reference on nullish return value", () => {
+		func.mockReturnValueOnce(undefined)
+		expect(proxy.n.e.s.t.e.d.func()).toBeNil()
+		func.mockReturnValueOnce(null)
+		expect(proxy.n.e.s.t.e.d.func()).toBeNil()
+	})
+
+	it("should throw TypeError if contained value is not function", () => {
+		expect(() => proxy.n.e.s.t.e.d.notFunc()).toThrowError(TypeError)
+	})
+
+	it("should return nil reference when calling nil reference", () => {
+		expect(proxy.n.e.s.t.e.d.und()).toBeNil()
+		expect(proxy.u.v.w.x.y.z()).toBeNil()
 	})
 })
