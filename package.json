@@ -23,7 +23,8 @@
     "lint:fix": "npm run --silent lint -- --fix || exit 0",
     "build": "rollup -c config/rollup.config.js",
     "build:watch": "npm run --silent build -- --watch",
-    "prepublish": "npm run --silent build && npm test"
+    "prepare": "npm run --silent build",
+    "prepublishOnly": "npm test"
   },
   "keywords": [
     "undefined",
