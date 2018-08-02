@@ -90,6 +90,13 @@ describe("Wrapping & unwrapping", () => {
 		expect($(obj)[$.$](1)).toBe(obj)
 	})
 
+	it("should return the value if falsy but not nullish", () => {
+		expect($(false).$(true)).toBe(false)
+		expect($(false)[$.$](true)).toBe(false)
+		expect($(0).$(1)).toBe(0)
+		expect($(0)[$.$](1)).toBe(0)
+	})
+
 	it("should return undefined for undefined nil", () => {
 		expect($(undefined).$()).toBeUndefined()
 		expect($(undefined)[$.$]()).toBeUndefined()
@@ -197,6 +204,11 @@ describe("Basic set", () => {
 		proxy.n.e.s.t.e.d.setter = to
 		expect(setContext).toBeCalledTimes(1)
 		expect(setContext).toBeCalledWith(obj.n.e.s.t.e.d)
+	})
+
+	it("should not throw when setting direct nil", () => {
+		expect(() => { $(undefined).a = 1 }).not.toThrow()
+		expect(() => { $(null).a = 1 }).not.toThrow()
 	})
 })
 
