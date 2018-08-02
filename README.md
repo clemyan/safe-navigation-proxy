@@ -53,10 +53,12 @@ Safe navigation proxies are, as you may have guessed, the basis of `safe-navigat
 
 A safe navigation proxy either
 
-- is a nil reference, denoted as `$N` or `$N(base,name)` below; or
-- contains a value. They are denoted `$V` or `$V(value)` below.
+- is a nil reference, denoted as `$N` or `$N{ref}`; or
+- contains a value. They are denoted `$V` or `$V{value}`.
 
 This section specifies the operations on and the behavior of safe navigation proxies.
+
+> _You may notice that nil is said to be a **reference** above. This is an abstract concept that operations on the nil reference can modify the object being referred to (a.k.a. the referent). This is necessary to implement assignment propagation (documented below). Since JavaScript does not have reference types, the operations on nil references cannot be specified to carry out operations not possible in userland code (e.g. reassigning variables). On the other hand, how the specified effects are achieved is implementation detail._
 
 The test suite in the `test` directory is also a pretty thorough specification of `safe-navigation-proxy`.
 
@@ -64,12 +66,14 @@ The test suite in the `test` directory is also a pretty thorough specification o
 
 The default export of `safe-navigation-proxy` is a function that constructs a safe navigation proxy. This function is denoted as `$` below. But note that the revealing module (`dist/index.js`) and the UMD module (in revealing module mode) distributables assign this function to the global variable `safeNav` instead of `$` to prevent conflict with other libraries.
 
-`$(value)` returns `value` wrapped in a safe navigation proxy. That means a nil reference if `value` is nullish (by default, `undefined` and `null` are nullish), or a proxy containing that value otherwise.
+`$(value)` returns `value` wrapped in a safe navigation proxy. That means a nil reference to an empty object if `value` is nullish (by default, `undefined` and `null` are nullish), or a proxy containing that value otherwise.
 
 That is
 
-- `$(value)` returns `$N` if `value` is nullish
-- `$(value)` returns `$V(value)` otherwise
+- `$(value)` returns `$N{{}}` if `value` is nullish
+- `$(value)` returns `$V{value}` otherwise
+
+> _Here, we have a nil reference to an empty object literal. Since outside code cannot get a handle on that object, this is a shorthand to say operations on this nil reference will not modify any visible objects._
 
 ### Unwrapping
 
@@ -80,7 +84,7 @@ The unwrap method takes a default value argument, which will be returned if the 
 That is,
 
 - `$N.$(def)` and `$N[$.$](def)` returns `def`
-- `$V(value).$(def)` and `$V(value)[$.$](def)` returns `value`
+- `$V{value}.$(def)` and `$V{value}[$.$](def)` returns `value`
 
 Note that this allows safe navigation proxies to be used for nullish-coalescing
 
@@ -92,53 +96,46 @@ console.log($(1).$(2)) // 1
 
 ### Get
 
-Property access is the primary use case of safe navigation proxies. Getting a property of a nil reference returns a nil reference to that property. Getting a property of a non-nil proxy returns the result of accessing the corresponding property of the contained value, wrapped in a safe navigation proxy.
+Property access is the primary use case of safe navigation proxies. Getting a property of a nil reference returns a nil reference to that property. Getting a property of a non-nil proxy returns either a proxy with value equal to that property of the contained value if that is not nullish, or a nil reference to it otherwise
 
-That is, roughly
+That is
 
-- `$N(base,name).prop` returns `$N($N(base,name), prop)`
-- `$V(value).prop` returns `$N(value,prop)` if `value.prop` is nullish
-- `$V(value).prop` returns `$V(value.prop)` if `value.prop` is not nullish
+- `$N{ref}.prop` returns `$N{$N{ref}.prop}`
+- `$V{value}.prop` returns `$N{value.prop}` if `value.prop` is nullish
+- `$V{value}.prop` returns `$V{value.prop}` if `value.prop` is not nullish
 
 Since `undefined` is nullish by default, accessing an undefined property via a safe navigation proxy returns a nil reference.
-
-```JavaScript
-const proxy = $({a: {b: {c: 1}}})
-console.log(proxy.a.b.c.$()) // 1
-console.log(proxy.non.existent.property.$(2)) // 2
-console.log(proxy.non.existent.property.$()) // undefined
-```
 
 ### Set
 
 Besides accessing properties, creating nested properties are also troublesome. One often have to create a stack of empty objects in order to create a nested property. `safe-navigation-proxy` simplifies this by supporting assignment propagation.
 
-When assignment propagation is enabled (which is the default), assigning a value to a property of a nil reference sets the referent to (by default) an object with only one own property with the key-value pair being assigned.
+When assignment propagation is enabled (which is the default), assigning a value to a property of a nil reference sets the referent to (by default) an object with only one own property -- the key-value pair being assigned.
 
 Assigning a value to a property of a non-nil proxy delegates to a normal assignment to the contained value.
 
 That is
 
-- Setting `$N(base,name).prop = v` sets `base.name = {prop: v}`
-- Setting `$V(value).prop = v` sets `value.prop = v`
+- Setting `$N{ref}.prop = v` sets `ref = {prop: v}`
+- Setting `$V{value}.prop = v` sets `value.prop = v`
 
-Note that this means assignment propagates from nested properties up. `$(obj).a.b.c.d = 1` is `$N($N($N(obj,a),b),c).d = 1` assuming `obj.a` is nullish. That resolves as:
+Note that this means assignment propagates from deeply nested properties up to shallow properties. Assuming `obj.a` is nullish, `$(obj).a.b.c.d = 1` is `$N{$N{$N{obj.a}.b}.c}.d = 1`. That resolves as:
 
-1. `$N($N(obj,a),b).c = {d: 1}`
-2. `$N(obj,a).b = {c: {d: 1}}`
+1. `N{$N{obj.a}.b}.c = {d: 1}`
+2. `$N{obj.a}.b = {c: {d: 1}}`
 3. `obj.a = {b: {c: {d: 1}}}`
 
-This distiction is important when configuration comes into the mix.
+This distinction is important when configuration comes into the mix.
 
 ### Apply
 
 In JavaScript, functions are first class objects and can be assigned to object properties. These methods can be accessed using safe navigation proxies, but working with them only using proxy get is cumbersome. One have to unwrap with a default implementation, call, then rewrap.
 
-To facilitate using safely navigating to and through methods, safe navigation proxies can be called as functions to effectively perform the process outlined above. In particular, calling a non-nil proxy calls the contained value as a function and wraps the return value in a safe navigation proxy; and calling a nil reference return another nil reference.
+To facilitate safely navigating to and through methods, safe navigation proxies can be called as functions to effectively perform the process outlined above. In particular, calling a non-nil proxy calls the contained value as a function and wraps the return value in a safe navigation proxy; and calling a nil reference return a nil reference to an empty object.
 
 That is,
 
-- `($N)(args)` returns `$N`
-- `($V(value))(args)` returns `$(value(args))`
+- `$N(args)` returns `$N{{}}`
+- `$V{value}(args)` returns `$(value(args))`
 
 Note that if a non-nil proxy with a non-function value is called, the value will be called as a function, resulting in `TypeError` being thrown by default.
