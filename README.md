@@ -26,15 +26,23 @@ Files for other module loader styles are also available in the respective direct
 ```JavaScript
 import $ from 'safe-navigation-proxy'
 
-const obj = {a: {b: {c: 1}}}
+const obj = {n: {e: {s: {t: {e: {d: {
+	one: 1,
+	func: () => 1
+}}}}}}}
 const proxy = $(obj)
 
 // Get
-console.log(proxy.a.b.c.$()) // 1
+console.log(proxy.n.e.s.t.e.d.one.$()) // 1
 console.log(proxy.non.existent.property.$()) // undefined
+console.log(proxy.non.existent.property.$(2)) // 2
 
 // Set
-proxy.x.y.z = 2 // Now obj is {a: {b: {c: 1}}, x: {y: {z: 2}}}
+proxy.x.y.z = 2 // Now obj.x is {y: {z: 2}}
+
+// Apply
+console.log(proxy.n.e.s.t.e.d.func().$()) // 1
+console.log(proxy.non.existent.func().$()) // undefined
 ```
 
 ## Documentation
@@ -121,3 +129,16 @@ Note that this means assignment propagates from nested properties up. `$(obj).a.
 3. `obj.a = {b: {c: {d: 1}}}`
 
 This distiction is important when configuration comes into the mix.
+
+### Apply
+
+In JavaScript, functions are first class objects and can be assigned to object properties. These methods can be accessed using safe navigation proxies, but working with them only using proxy get is cumbersome. One have to unwrap with a default implementation, call, then rewrap.
+
+To facilitate using safely navigating to and through methods, safe navigation proxies can be called as functions to effectively perform the process outlined above. In particular, calling a non-nil proxy calls the contained value as a function and wraps the return value in a safe navigation proxy; and calling a nil reference return another nil reference.
+
+That is,
+
+- `($N)(args)` returns `$N`
+- `($V(value))(args)` returns `$(value(args))`
+
+Note that if a non-nil proxy with a non-function value is called, the value will be called as a function, resulting in `TypeError` being thrown by default.
