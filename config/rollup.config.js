@@ -7,7 +7,7 @@ module.exports = {
 		{file: `dist/es/index.js`, format: 'es'}
 	],
 	plugins: [
-		require('rollup-plugin-babel-minify')()
+		require('rollup-plugin-babel-minify')({comments: false})
 	],
 	watch: {
 		inlude: 'src/**/*.js'
