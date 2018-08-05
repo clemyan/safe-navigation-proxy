@@ -139,3 +139,34 @@ That is,
 - `$V{value}(args)` returns `$(value(args))`
 
 Note that if a non-nil proxy with a non-function value is called, the value will be called as a function, resulting in `TypeError` being thrown by default.
+
+### Configuration
+
+While the sections above have detailed the default behavior of safe navigation proxies. However, their true power lies in their configurability.
+
+#### `$.config(options)`
+
+The `$.config` function creates a configured instance of `$`
+
+```JavaScript
+const $conf = $.config({ /* some options */ })
+
+// Then $conf can be used in place of $
+const value = $conf(obj).n.e.s.t.e.d.$()
+```
+
+Any safe navigation proxy created from operations on a configured proxy also inherits the configuration. So, proxies in a get/apply chain exhibits the same behavior.
+
+The following sections details each option.
+
+#### `options.isNullish`
+
+The default `$` treats `undefined` and `null` as nullish. The `isNullish` configuration changes what value(s) is/are considered nullish.
+
+If `isNullish` is an array, then a value is considered nullish if and only if it is contained within `isNullish`, determined with [`Array.prototype.includes`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes).
+
+If `isNullish` is a function, then it will be called with the value as the only argument. A value is considered nullish if and only if `isNullish(value)` returns a truthy value. Note that if `isNullish` throws, `$conf(value)` also throws with the same error.
+
+For all other values of `isNullish`, then only that value is considered nullish. Values that are the same as the `isNullish` value according to [`Object.is`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is) are nullish.
+
+Note that if `options.isNullish` explicitly set to or declared as `undefined`, then `null` is not considered nullish since only `undefined` is. To trigger the default behavior, make sure `options` does not have `isNullish` as an own property or use the array `[undefined, null]`.
