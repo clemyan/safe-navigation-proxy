@@ -1,56 +1,87 @@
 const symbols = {
-	unwrap: Symbol('$')
+	$: Symbol('unwrap')
 }
 
-const vHandler = {
-	get(target, prop) {
-		if(prop === symbols.unwrap || prop === '$') {
-			// eslint-disable-next-line no-unused-vars
-			return def => target()
+function merge(obj1, obj2) {
+	if(typeof obj2 === 'object' || Array.isArray(obj2)) {
+		return obj2
+	}
+
+	const common = {}
+	for(const key in obj2) {
+		if(obj1.hasOwnProperty(key) && obj2.hasOwnProperty(key)) {
+			common[key] = merge(obj1, obj2)
 		}
-		const value = Object(target())
-		return safeNav(Reflect.get(value, prop, value), value, prop)
-	},
-	set(target, prop, to) {
-		const value = Object(target())
-		return Reflect.set(value, prop, to, value)
-	},
-	apply(target, proxy, args) {
-		const context = proxy ? proxy[symbols.unwrap]() : proxy
-		return safeNav(Reflect.apply(target(), context, args))
 	}
+
+	return Object.assign({}, obj1, obj2, common)
 }
 
-const nHandler = {
-	get(target, prop, proxy) {
-		if(prop === symbols.unwrap || prop === '$') {
-			return def => def
+const defaults = {
+
+}
+
+function config(options) {
+	options = merge(defaults, options)
+
+	const vHandler = {
+		get(target, prop) {
+			if(prop === symbols.$ || prop === '$') {
+				// eslint-disable-next-line no-unused-vars
+				return def => target()
+			}
+			const value = Object(target())
+			return $(Reflect.get(value, prop, value), value, prop)
+		},
+		set(target, prop, to) {
+			const value = Object(target())
+			return Reflect.set(value, prop, to, value)
+		},
+		apply(target, proxy, args) {
+			const context = proxy ? proxy[symbols.$]() : proxy
+			return $(Reflect.apply(target(), context, args))
 		}
-		return $N(proxy, prop)
-	},
-	set(target, prop, to) {
-		const {base, name} = target()
-		const obase = Object(base)
-		return Reflect.set(obase, name, {[prop]: to}, obase)
-	},
-	apply() {
-		return $N()
-	}
-}
-
-function safeNav(value, base, name) {
-	if(value === undefined || value === null) {
-		return $N(base, name)
 	}
 
-	return new Proxy(() => value, vHandler)
+	const nHandler = {
+		get(target, prop, proxy) {
+			if(prop === symbols.$ || prop === '$') {
+				return def => def
+			}
+			return $N(proxy, prop)
+		},
+		set(target, prop, to) {
+			const {base, name} = target()
+			const obase = Object(base)
+			return Reflect.set(obase, name, {[prop]: to}, obase)
+		},
+		apply() {
+			return $N()
+		}
+	}
+
+	const isNullish = options.isNullish
+	function $(value, base, name) {
+		if(!options.hasOwnProperty('isNullish') && (value === undefined || value === null)
+			|| Array.isArray(isNullish) && isNullish.includes(value)
+			|| typeof isNullish === 'function' && isNullish(value)
+			|| Object.is(isNullish, value)) {
+			
+			return $N(base, name)
+		}
+
+		return new Proxy(() => value, vHandler)
+	}
+
+	function $N(base, name) {
+		return new Proxy(() => ({base, name}), nHandler)
+	}
+
+	return value => $(value)
 }
 
-function $N(base, name) {
-	return new Proxy(() => ({base, name}), nHandler)
-}
-
-const $ = value => safeNav(value)
-$.$ = symbols.unwrap
+const $ = config({})
+$.config = config
+Object.assign($, symbols)
 
 export default $
