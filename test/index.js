@@ -28,13 +28,13 @@ expect.extend({
 						+ '\n\n'
 						+ `Expected value not to be safe navigation proxy with value:\n`
 						+ `  ${this.utils.printExpected(expected)}\n`
-						+ `Received safe navigation proxy with value:\n` +
+						+ `Received safe navigation proxy with value:\n`
 						+ `  ${this.utils.printReceived(value)}`
 					: () => this.utils.matcherHint('.toHaveValue')
 						+ '\n\n'
 						+ `Expected value to be safe navigation proxy with value:\n`
 						+ `  ${this.utils.printExpected(expected)}\n`
-						+ `Received safe navigation proxy with value:\n` +
+						+ `Received safe navigation proxy with value:\n`
 						+ `  ${this.utils.printReceived(value)}`
 			}
 		} catch(err) {
@@ -44,7 +44,7 @@ expect.extend({
 					+ '\n\n'
 					+ `Expected value to be safe navigation proxy with value:\n`
 					+ `  ${this.utils.printExpected(expected)}\n`
-					+ `Received:\n` +
+					+ `Received:\n`
 					+ `  ${this.utils.printReceived(received)}`
 			}
 		}
