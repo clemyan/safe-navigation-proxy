@@ -2,15 +2,15 @@ const symbols = {
 	$: Symbol('unwrap')
 }
 
-function merge(obj1, obj2) {
-	if(typeof obj2 === 'object' || Array.isArray(obj2)) {
+const merge = (obj1, obj2) => {
+	if(typeof obj2 !== 'object' || Array.isArray(obj2)) {
 		return obj2
 	}
 
 	const common = {}
 	for(const key in obj2) {
 		if(obj1.hasOwnProperty(key) && obj2.hasOwnProperty(key)) {
-			common[key] = merge(obj1, obj2)
+			common[key] = merge(obj1[key], obj2[key])
 		}
 	}
 
