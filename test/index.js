@@ -1,12 +1,12 @@
 import $ from '../src/index.js'
 
 expect.extend({
-	toHaveValue(received, expected){
+	toHaveValue(received, expected) {
 		try {
 			const def = {}
 			const value = received[$.$](def)
 			
-			if(Object.is(value, def)){
+			if(Object.is(value, def)) {
 				return {
 					pass: false,
 					message: () => this.utils.matcherHint('.toHaveValue')
@@ -49,7 +49,7 @@ expect.extend({
 			}
 		}
 	},
-	toBeNil(received, expected){
+	toBeNil(received, expected) {
 		this.utils.ensureNoExpected(expected)
 		try {
 			const def = {}
@@ -122,9 +122,9 @@ describe("Basic get", () => {
 	const obj = {n: {e: {s: {t: {e: {d: {
 		one: 1,
 		null: null,
-		get getTwo(){ return 2 },
-		get getThis(){ return this },
-		get getNull(){ return null },
+		get getTwo() { return 2 },
+		get getThis() { return this },
+		get getNull() { return null },
 	}}}}}}}
 	const proxy = $(obj)
 
@@ -160,7 +160,7 @@ describe("Basic set", () => {
 	beforeEach(() => {
 		obj = {
 			n: {e: {s: {t: {e: {d: {
-				set setter(value){
+				set setter(value) {
 					setValue(value)
 					setContext(this)
 				}

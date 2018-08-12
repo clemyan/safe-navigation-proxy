@@ -4,7 +4,8 @@ module.exports = {
 		'indent': ['error', 'tab'],
 		'linebreak-style': ['error', 'unix'],
 		'semi': ['error', 'never'],
-		'key-spacing': ['error'],
+		'space-before-blocks': ['error'],
+		'key-spacing': ['error', {mode: 'minimum'}],
 		'keyword-spacing': ['error', {
 			overrides: {
 				if: {after: false},
