@@ -1,43 +1,34 @@
 import $ from '../src/index.js'
 
+const isSafeNav = (obj) => {
+	try {
+		obj[$.$]({})
+		return true
+	} catch(err) {
+		return false
+	}
+}
+
 expect.extend({
+	toBeSafeNav(received, expected) {
+		this.utils.ensureNoExpected(expected)
+
+		const pass = isSafeNav(received)
+
+		return {
+			pass,
+			message: pass
+				? () => this.utils.matcherHint('.not.toBeSaveNav')
+					+ '\n\n'
+					+ 'Received save navigation proxy'
+				: () => this.utils.matcherHint('.toBeSaveNav')
+					+ '\n\n'
+					+ 'Received:\n'
+					+ `  ${this.utils.printReceived(received)}`
+		}
+	},
 	toHaveValue(received, expected) {
-		try {
-			const def = {}
-			const value = received[$.$](def)
-			
-			if(Object.is(value, def)) {
-				return {
-					pass: false,
-					message: () => this.utils.matcherHint('.toHaveValue')
-						+ '\n\n'
-						+ `Expected value to be safe navigation proxy with value:\n`
-						+ `  ${this.utils.printExpected(expected)}\n`
-						+ `Received nil reference`
-				}
-			}
-
-			const pass = expected && typeof expected.asymmetricMatch === 'function'
-				? expected.asymmetricMatch(value)
-				: Object.is(expected, value)
-
-			return {
-				pass,
-				message: pass
-					? () => this.utils.matcherHint('.not.toHaveValue')
-						+ '\n\n'
-						+ `Expected value not to be safe navigation proxy with value:\n`
-						+ `  ${this.utils.printExpected(expected)}\n`
-						+ `Received safe navigation proxy with value:\n`
-						+ `  ${this.utils.printReceived(value)}`
-					: () => this.utils.matcherHint('.toHaveValue')
-						+ '\n\n'
-						+ `Expected value to be safe navigation proxy with value:\n`
-						+ `  ${this.utils.printExpected(expected)}\n`
-						+ `Received safe navigation proxy with value:\n`
-						+ `  ${this.utils.printReceived(value)}`
-			}
-		} catch(err) {
+		if(!isSafeNav(received)) {
 			return {
 				pass: false,
 				message: () => this.utils.matcherHint('.toHaveValue')
@@ -48,26 +39,46 @@ expect.extend({
 					+ `  ${this.utils.printReceived(received)}`
 			}
 		}
+
+		const def = {}
+		const value = received[$.$](def)
+		
+		if(Object.is(value, def)) {
+			return {
+				pass: false,
+				message: () => this.utils.matcherHint('.toHaveValue')
+					+ '\n\n'
+					+ `Expected value to be safe navigation proxy with value:\n`
+					+ `  ${this.utils.printExpected(expected)}\n`
+					+ `Received nil reference`
+			}
+		}
+
+		const pass = expected && typeof expected.asymmetricMatch === 'function'
+			? expected.asymmetricMatch(value)
+			: Object.is(expected, value)
+
+		return {
+			pass,
+			message: pass
+				? () => this.utils.matcherHint('.not.toHaveValue')
+					+ '\n\n'
+					+ `Expected value not to be safe navigation proxy with value:\n`
+					+ `  ${this.utils.printExpected(expected)}\n`
+					+ `Received safe navigation proxy with value:\n`
+					+ `  ${this.utils.printReceived(value)}`
+				: () => this.utils.matcherHint('.toHaveValue')
+					+ '\n\n'
+					+ `Expected value to be safe navigation proxy with value:\n`
+					+ `  ${this.utils.printExpected(expected)}\n`
+					+ `Received safe navigation proxy with value:\n`
+					+ `  ${this.utils.printReceived(value)}`
+		}
 	},
 	toBeNil(received, expected) {
 		this.utils.ensureNoExpected(expected)
-		try {
-			const def = {}
-			const value = received[$.$](def)
-			const pass = Object.is(value, def)
 
-			return {
-				pass,
-				message: pass
-					? () => this.utils.matcherHint('.not.toBeNil')
-						+ '\n\n'
-						+ `Received nil reference`
-					: () => this.utils.matcherHint('.toBeNil')
-						+ '\n\n'
-						+ `Received safe navigation proxy with value:\n`
-						+ `  ${this.utils.printReceived(value)}`
-			}
-		} catch(err) {
+		if(!isSafeNav(received)) {
 			return {
 				pass: false,
 				message: () => this.utils.matcherHint('.toBeNil')
@@ -75,6 +86,22 @@ expect.extend({
 					+ `Received:\n`
 					+ `  ${this.utils.printReceived(received)}`
 			}
+		}
+
+		const def = {}
+		const value = received[$.$](def)
+		const pass = Object.is(value, def)
+
+		return {
+			pass,
+			message: pass
+				? () => this.utils.matcherHint('.not.toBeNil')
+					+ '\n\n'
+					+ `Received nil reference`
+				: () => this.utils.matcherHint('.toBeNil')
+					+ '\n\n'
+					+ `Received safe navigation proxy with value:\n`
+					+ `  ${this.utils.printReceived(value)}`
 		}
 	}
 })
@@ -336,5 +363,59 @@ describe("Configuration: isNullish", () => {
 				})
 				expect($conf(ref2)).toHaveValue(ref2)
 			})
+	})
+})
+
+describe("Configuration: noConflict", () => {
+	const symUnwrap = Symbol('unwrap')
+	const symNotUnwrap = Symbol('notUnwrap')
+	const obj = {n: {e: {s: {t: {
+		unwrap:         {},
+		[symUnwrap]:    {},
+		notUnwrap:      {},
+		[symNotUnwrap]: {},
+		$:              {},
+		[$.$]:          {},
+	}}}}}
+
+	function testUnwrap($conf, prop) {
+		expect($conf(obj).n.e.s.t[prop]).not.toBeSafeNav()
+		expect($conf(obj).n.e.s.t[prop]).not.toThrow()
+		expect($conf(obj).n.e.s.t[prop]()).toBe(obj.n.e.s.t)
+	}
+
+	function testNotUnwrap($conf, prop) {
+		expect($conf(obj).n.e.s.t[prop]).toHaveValue(obj.n.e.s.t[prop])
+	}
+
+	describe.each([
+		['true',   true,                  false, false],
+		['string', 'unwrap',              true,  false],
+		['symbol', symUnwrap,             false, true ],
+		['array',  ['unwrap', symUnwrap], true,  true ]
+	])("%s noConflict", (_, noConflict, ...tests) => {
+		const $conf = $.config({noConflict})
+
+		test.each(
+			['unwrap', symUnwrap]
+				.filter((_, index) => tests[index])
+				.map(prop => [typeof prop, prop])
+		)("should be able to unwrap with specified %s prop", (_, prop) => {
+			testUnwrap($conf, prop)
+		})
+
+		test.each(
+			['notUnwrap', symNotUnwrap].map(prop => [typeof prop, prop])
+		)("should not be able to unwrap with unspecified %s prop", (_, prop) => {
+			testNotUnwrap($conf, prop)
+		})
+
+		it("should not be able to unwrap with $", () => {
+			testNotUnwrap($conf, '$')
+		})
+
+		it("should still be able to unwrap with $.$", () => {
+			testUnwrap($conf, $.$)
+		})
 	})
 })

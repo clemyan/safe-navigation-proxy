@@ -18,15 +18,19 @@ const merge = (obj1, obj2) => {
 }
 
 const defaults = {
-
+	noConflict: '$'
 }
 
 function config(options) {
 	options = merge(defaults, options)
 
+	const isUnwrapKey = Array.isArray(options.noConflict)
+		? prop => prop === symbols.$ || options.noConflict.includes(prop)
+		: prop => prop === symbols.$ || prop === options.noConflict
+
 	const vHandler = {
 		get(target, prop) {
-			if(prop === symbols.$ || prop === '$') {
+			if(isUnwrapKey(prop)) {
 				// eslint-disable-next-line no-unused-vars
 				return def => target()
 			}
@@ -45,7 +49,7 @@ function config(options) {
 
 	const nHandler = {
 		get(target, prop, proxy) {
-			if(prop === symbols.$ || prop === '$') {
+			if(isUnwrapKey(prop)) {
 				return def => def
 			}
 			return $N(proxy, prop)
