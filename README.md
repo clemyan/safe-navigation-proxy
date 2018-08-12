@@ -170,3 +170,48 @@ If `isNullish` is a function, then it will be called with the value as the only 
 For all other values of `isNullish`, then only that value is considered nullish. Values that are the same as the `isNullish` value according to [`Object.is`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is) are nullish.
 
 Note that if `options.isNullish` explicitly set to or declared as `undefined`, then `null` is not considered nullish since only `undefined` is. To trigger the default behavior, make sure `options` does not have `isNullish` as an own property or use the array `[undefined, null]`.
+
+#### `options.noConflict`
+
+By default, one can access the unwrap method of a safe navigation proxy using the symbol `$.$` (i.e. `$(...)[$.$]`) or the `$` property (i.e. `$(...).$`). However, the latter may clash with the underlying value if it has a `$` property. In this case, the unwrap method "shadows" that property.
+
+```JavaScript
+$({ $: 1 }).$ // Unwrap method, not proxy with 1 as value
+```
+
+The `noConflict` configuration can be use to avoid this. Note that regardless of this configuration, the symbol `$.$` can be used to access the unwrap method.
+
+If `noConflict` is `true`, then the unwrap method can only be accessed with `$.$`.
+
+If `noConflict` is a string or symbol, then the unwrap method can be access using that key, in addition to `$.$`.
+
+`noConflict` can also be set to an array of strings and/or symbols. In this case, each of those can be used to access the unwrap method, in addition to `$.$`.
+
+```JavaScript
+const sym = Symbol('unwrap')
+
+let $conf = $.config({noConflict: true})
+
+// Unwrap method can be accessed as:
+$()[$.$]
+
+$conf = $.config({noConflict: 'unwrap'})
+
+// Unwrap method can be accessed as:
+$().unwrap
+$()[$.$]
+
+$conf = $.config({noConflict: sym})
+
+// Unwrap method can be accessed as:
+$()[sym]
+$()[$.$]
+
+
+$conf = $.config({noConflict: ['unwarp', sym]})
+
+// Unwrap method can be accessed as:
+$().unwrap
+$()[sym]
+$()[$.$]
+```
