@@ -6,7 +6,9 @@ const symbols = {
 }
 
 const merge = (obj1, obj2) => {
-	if(typeof obj2 !== 'object' || Array.isArray(obj2)) {
+	if(typeof obj1 !== 'object'
+		|| typeof obj2 !== 'object' || Array.isArray(obj2)) {
+
 		return obj2
 	}
 
@@ -21,7 +23,10 @@ const merge = (obj1, obj2) => {
 }
 
 const defaults = {
-	noConflict: '$'
+	noConflict: '$',
+	nil: {
+		unwrap: def => def
+	}
 }
 
 function config(options) {
@@ -30,6 +35,9 @@ function config(options) {
 	const isUnwrapKey = Array.isArray(options.noConflict)
 		? prop => prop === symbols.$ || options.noConflict.includes(prop)
 		: prop => prop === symbols.$ || prop === options.noConflict
+	const nilUnwrap = typeof options.nil.unwrap === 'function'
+		? options.nil.unwrap
+		: () => options.nil.unwrap
 
 	const vHandler = {
 		get(target, prop) {
@@ -65,7 +73,7 @@ function config(options) {
 	const nHandler = {
 		get(target, prop, proxy) {
 			if(isUnwrapKey(prop)) {
-				return def => def
+				return nilUnwrap
 			}
 
 			// #if REFLECT
@@ -98,7 +106,7 @@ function config(options) {
 			|| Array.isArray(isNullish) && isNullish.includes(value)
 			|| typeof isNullish === 'function' && isNullish(value)
 			|| Object.is(isNullish, value)) {
-			
+
 			return $N(base, name)
 		}
 
