@@ -1,19 +1,11 @@
 import $ from '../src/index.js'
 
-const isSafeNav = (obj) => {
-	try {
-		obj[$.$]({})
-		return true
-	} catch(err) {
-		return false
-	}
-}
-
 expect.extend({
 	toBeSafeNav(received, expected) {
 		this.utils.ensureNoExpected(expected)
 
-		const pass = isSafeNav(received)
+		const reflect = received[$._]
+		const pass = reflect !== undefined && reflect.saveNav === true
 
 		return {
 			pass,
@@ -28,7 +20,9 @@ expect.extend({
 		}
 	},
 	toHaveValue(received, expected) {
-		if(!isSafeNav(received)) {
+		const reflect = received[$._]
+
+		if(reflect === undefined || reflect.safeNav !== true) {
 			return {
 				pass: false,
 				message: () => this.utils.matcherHint('.toHaveValue')
@@ -39,11 +33,8 @@ expect.extend({
 					+ `  ${this.utils.printReceived(received)}`
 			}
 		}
-
-		const def = {}
-		const value = received[$.$](def)
 		
-		if(Object.is(value, def)) {
+		if(reflect.nil !== false) {
 			return {
 				pass: false,
 				message: () => this.utils.matcherHint('.toHaveValue')
@@ -54,6 +45,7 @@ expect.extend({
 			}
 		}
 
+		const value = reflect.value
 		const pass = expected && typeof expected.asymmetricMatch === 'function'
 			? expected.asymmetricMatch(value)
 			: Object.is(expected, value)
@@ -78,7 +70,9 @@ expect.extend({
 	toBeNil(received, expected) {
 		this.utils.ensureNoExpected(expected)
 
-		if(!isSafeNav(received)) {
+		const reflect = received[$._]
+
+		if(reflect === undefined || reflect.safeNav !== true) {
 			return {
 				pass: false,
 				message: () => this.utils.matcherHint('.toBeNil')
@@ -88,9 +82,7 @@ expect.extend({
 			}
 		}
 
-		const def = {}
-		const value = received[$.$](def)
-		const pass = Object.is(value, def)
+		const pass = reflect.nil === true
 
 		return {
 			pass,
@@ -101,7 +93,7 @@ expect.extend({
 				: () => this.utils.matcherHint('.toBeNil')
 					+ '\n\n'
 					+ `Received safe navigation proxy with value:\n`
-					+ `  ${this.utils.printReceived(value)}`
+					+ `  ${this.utils.printReceived(reflect.value)}`
 		}
 	}
 })

@@ -41,6 +41,10 @@
     "jest": "^23.4.1",
     "jest-runner-eslint": "^0.6.0",
     "rollup": "^0.63.4",
-    "rollup-plugin-babel-minify": "^5.0.0"
+    "rollup-plugin-babel-minify": "^5.0.0",
+    "rollup-plugin-re": "^1.0.7"
+  },
+  "dependencies": {
+    "fill-range": "^2.2.4"
   }
 }

@@ -1,3 +1,5 @@
+dependencies:
+  fill-range: 2.2.4
 devDependencies:
   babel-helper-evaluate-path: 0.4.3
   babel-plugin-transform-es2015-modules-commonjs: 6.26.2
@@ -6,6 +8,7 @@ devDependencies:
   jest-runner-eslint: 0.6.0
   rollup: 0.63.4
   rollup-plugin-babel-minify: 5.0.0
+  rollup-plugin-re: 1.0.7
 packages:
   /@babel/code-frame/7.0.0-beta.54:
     dependencies:
@@ -1361,6 +1364,10 @@ packages:
       node: '>=0.10.0'
     resolution:
       integrity: sha1-De4/7TH81GlhjOc0IJn8GvoL2xM=
+  /estree-walker/0.5.2:
+    dev: true
+    resolution:
+      integrity: sha512-XpCnW/AE10ws/kDAs37cngSkvgIR8aN3G0MS85m7dUpuK2EREo9VJ00uvw6Dg/hXEpfsE1I1TvJOJr+Z+TL+ig==
   /esutils/2.0.2:
     dev: true
     engines:
@@ -1556,10 +1563,9 @@ packages:
     dependencies:
       is-number: 2.1.0
       isobject: 2.1.0
-      randomatic: 3.0.0
+      randomatic: 3.1.0
       repeat-element: 1.1.2
       repeat-string: 1.6.1
-    dev: true
     engines:
       node: '>=0.10.0'
     resolution:
@@ -2000,7 +2006,6 @@ packages:
     resolution:
       integrity: sha1-d8mYQFJ6qOyxqLppe4BkWnqSap0=
   /is-buffer/1.1.6:
-    dev: true
     resolution:
       integrity: sha512-NcdALwpXkTm5Zvvbk7owOUSvVvBKDgKP5/ewfXEznmQFfs4ZRmanOeKBTjRVjka3QFoN6XJ+9F3USqfHqTaU5w==
   /is-builtin-module/1.0.0:
@@ -2145,7 +2150,6 @@ packages:
   /is-number/2.1.0:
     dependencies:
       kind-of: 3.2.2
-    dev: true
     engines:
       node: '>=0.10.0'
     resolution:
@@ -2159,7 +2163,6 @@ packages:
     resolution:
       integrity: sha1-JP1iAaR4LPUFYcgQJ2r8fRLXEZU=
   /is-number/4.0.0:
-    dev: true
     engines:
       node: '>=0.10.0'
     resolution:
@@ -2249,7 +2252,6 @@ packages:
     resolution:
       integrity: sha512-eXK1UInq2bPmjyX6e3VHIzMLobc4J94i4AWn+Hpq3OU5KkrRC96OAcR3PRJ/pGu6m8TRnBHP9dkXQVsT/COVIA==
   /isarray/1.0.0:
-    dev: true
     resolution:
       integrity: sha1-u5NdSFgsuhaMBoNJV6VKPgcSTxE=
   /isexe/2.0.0:
@@ -2259,7 +2261,6 @@ packages:
   /isobject/2.1.0:
     dependencies:
       isarray: 1.0.0
-    dev: true
     engines:
       node: '>=0.10.0'
     resolution:
@@ -2745,7 +2746,6 @@ packages:
   /kind-of/3.2.2:
     dependencies:
       is-buffer: 1.1.6
-    dev: true
     engines:
       node: '>=0.10.0'
     resolution:
@@ -2765,7 +2765,6 @@ packages:
     resolution:
       integrity: sha512-NGEErnH6F2vUuXDh+OlbcKW7/wOcfdRHaZ7VWtqCztfHri/++YKmP51OdWeGPuqCOba6kk2OTe5d02VmTB80Pw==
   /kind-of/6.0.2:
-    dev: true
     engines:
       node: '>=0.10.0'
     resolution:
@@ -2868,6 +2867,12 @@ packages:
     dev: true
     resolution:
       integrity: sha512-fFEhvcgzuIoJVUF8fYr5KR0YqxD238zgObTps31YdADwPPAp82a4M8TrckkWyx7ekNlf9aBcVn81cFwwXngrJA==
+  /magic-string/0.16.0:
+    dependencies:
+      vlq: 0.2.3
+    dev: true
+    resolution:
+      integrity: sha1-lw67DacZMwEoX7GqZQ85vdgetFo=
   /magic-string/0.24.1:
     dependencies:
       sourcemap-codec: 1.4.1
@@ -2895,7 +2900,6 @@ packages:
     resolution:
       integrity: sha1-7Nyo8TFE5mDxtb1B8S80edmN+48=
   /math-random/1.0.1:
-    dev: true
     resolution:
       integrity: sha1-izqsWIuKZuSXXjzepn97sylgH6w=
   /mem/1.1.0:
@@ -3438,16 +3442,15 @@ packages:
       node: '>=0.6'
     resolution:
       integrity: sha512-N5ZAX4/LxJmF+7wN74pUD6qAh9/wnvdQcjq9TZjevvXzSUo7bfmw91saqMjzGS2xq91/odN2dW/WOl7qQHNDGA==
-  /randomatic/3.0.0:
+  /randomatic/3.1.0:
     dependencies:
       is-number: 4.0.0
       kind-of: 6.0.2
       math-random: 1.0.1
-    dev: true
     engines:
       node: '>= 0.10.0'
     resolution:
-      integrity: sha512-VdxFOIEY3mNO5PtSRkkle/hPJDHvQhK21oa73K4yAc9qmp6N429gAyF1gZMOTMeS0/AYzaV/2Trcef+NaIonSA==
+      integrity: sha512-KnGPVE0lo2WoXxIZ7cPR8YBpiol4gsSuOwDSg410oHh80ZMp5EiypNqL2K4Z77vJn6lB5rap7IkAmcUlalcnBQ==
   /read-pkg-up/1.0.1:
     dependencies:
       find-up: 1.1.2
@@ -3527,13 +3530,11 @@ packages:
     resolution:
       integrity: sha1-wkvOKig62tW8P1jg1IJJuSN52O8=
   /repeat-element/1.1.2:
-    dev: true
     engines:
       node: '>=0.10.0'
     resolution:
       integrity: sha1-7wiaF40Ug7quTZPrmLT55OEdmQo=
   /repeat-string/1.6.1:
-    dev: true
     engines:
       node: '>=0.10'
     resolution:
@@ -3696,6 +3697,20 @@ packages:
       rollup: '>=0.58.0'
     resolution:
       integrity: sha512-/XMozvFf1wm0O04FEybfEGl05jq9RQ408Xx/GjCfCau9ETzKYlEkfdi19pj2EvmpbSO/r0yspMKmwnUHNycdsw==
+  /rollup-plugin-re/1.0.7:
+    dependencies:
+      magic-string: 0.16.0
+      rollup-pluginutils: 2.3.1
+    dev: true
+    resolution:
+      integrity: sha1-/hdHBO1ZzahMrwK9ATtYLm/apPY=
+  /rollup-pluginutils/2.3.1:
+    dependencies:
+      estree-walker: 0.5.2
+      micromatch: 2.3.11
+    dev: true
+    resolution:
+      integrity: sha512-JZS8aJMHEHhqmY2QVPMXwKP6lsD1ShkrcGYjhAIvqKKdXQyPHw/9NF0tl3On/xOJ4ACkxfeG7AF+chfCN1NpBg==
   /rollup/0.63.4:
     dependencies:
       '@types/estree': 0.0.39
@@ -4349,6 +4364,10 @@ packages:
       '0': node >=0.6.0
     resolution:
       integrity: sha1-OhBcoXBTr1XW4nDB+CiGguGNpAA=
+  /vlq/0.2.3:
+    dev: true
+    resolution:
+      integrity: sha512-DRibZL6DsNhIgYQ+wNdWDL2SL3bKPlVrRiBqV5yuMm++op8W4kGFtaQfCs4KEJn0wBZcHVHJ3eoywX8983k1ow==
   /w3c-hr-time/1.0.1:
     dependencies:
       browser-process-hrtime: 0.1.2
@@ -4516,7 +4535,9 @@ specifiers:
   babel-helper-evaluate-path: ^0.4.3
   babel-plugin-transform-es2015-modules-commonjs: ^6.26.2
   eslint: ^5.2.0
+  fill-range: ^2.2.4
   jest: ^23.4.1
   jest-runner-eslint: ^0.6.0
   rollup: ^0.63.4
   rollup-plugin-babel-minify: ^5.0.0
+  rollup-plugin-re: ^1.0.7

@@ -1,5 +1,8 @@
 const symbols = {
-	$: Symbol('unwrap')
+	$: Symbol('unwrap'),
+	// #if REFLECT
+	_: Symbol('reflect')
+	// #endif
 }
 
 const merge = (obj1, obj2) => {
@@ -34,6 +37,18 @@ function config(options) {
 				// eslint-disable-next-line no-unused-vars
 				return def => target()
 			}
+
+			// #if REFLECT
+			if(prop === symbols._) {
+				return {
+					safeNav: true,
+					config: options,
+					nil: false,
+					value: target()
+				}
+			}
+			// #endif
+
 			const value = Object(target())
 			return $(Reflect.get(value, prop, value), value, prop)
 		},
@@ -52,10 +67,23 @@ function config(options) {
 			if(isUnwrapKey(prop)) {
 				return def => def
 			}
+
+			// #if REFLECT
+			if(prop === symbols._) {
+				const [base, name] = target()
+				return {
+					safeNav: true,
+					config: options,
+					nil: true,
+					set: val => Object(base)[name] = val
+				}
+			}
+			// #endif
+
 			return $N(proxy, prop)
 		},
 		set(target, prop, to) {
-			const {base, name} = target()
+			const [base, name] = target()
 			const obase = Object(base)
 			return Reflect.set(obase, name, {[prop]: to}, obase)
 		},
@@ -78,7 +106,7 @@ function config(options) {
 	}
 
 	function $N(base, name) {
-		return new Proxy(() => ({base, name}), nHandler)
+		return new Proxy(() => ([base, name]), nHandler)
 	}
 
 	return value => $(value)
