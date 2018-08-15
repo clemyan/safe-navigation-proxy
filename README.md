@@ -66,7 +66,7 @@ The test suite in the `test` directory is also a pretty thorough specification o
 
 The default export of `safe-navigation-proxy` is a function that constructs a safe navigation proxy. This function is denoted as `$` below. But note that the revealing module (`dist/index.js`) and the UMD module (in revealing module mode) distributables assign this function to the global variable `safeNav` instead of `$` to prevent conflict with other libraries.
 
-`$(value)` returns `value` wrapped in a safe navigation proxy. That means a nil reference to an empty object if `value` is nullish (by default, `undefined` and `null` are nullish), or a proxy containing that value otherwise.
+`$(value)` returns a nil reference if `value` is nullish (by default, `undefined` and `null` are nullish), and a proxy containing that value otherwise.
 
 That is
 
@@ -77,9 +77,9 @@ That is
 
 ### Unwrapping
 
-To retrieve values from safe navigation proxies, they have a method keyed by the symbol `$.$`. By default, this method is also be keyed by the property name `$`.
+To retrieve values from safe navigation proxies, they have an unwrap method keyed by the symbol `$.$`. By default, this method is also be keyed by the property name `$`.
 
-The unwrap method takes a default value argument, which will be returned if the proxy is a nil reference. Unwrapping a non-nil proxy returns the contained value, and the argument is ignored. Note that the argument is `undefined` if none is explicitly passed.
+The unwrap method of a non-nil reference returns the contained value. The default implementation of the unwrap method of a nil reference returns the first argument it receives. This allows one to pass a "default value" argument, which is returned if the proxy is nil and ignored otherwise. Note that the argument is `undefined` if none is explicitly passed.
 
 That is,
 
@@ -108,7 +108,7 @@ Since `undefined` is nullish by default, accessing an undefined property via a s
 
 ### Set
 
-Besides accessing properties, creating nested properties are also troublesome. One often have to create a stack of empty objects in order to create a nested property. `safe-navigation-proxy` simplifies this by supporting assignment propagation.
+Creating nested properties is also troublesome. One often has to create a stack of empty objects in order to create a nested property. `safe-navigation-proxy` simplifies this by supporting assignment propagation.
 
 When assignment propagation is enabled (which is the default), assigning a value to a property of a nil reference sets the referent to (by default) an object with only one own property -- the key-value pair being assigned.
 
@@ -129,20 +129,20 @@ This distinction is important when configuration comes into the mix.
 
 ### Apply
 
-In JavaScript, functions are first class objects and can be assigned to object properties. These methods can be accessed using safe navigation proxies, but working with them only using proxy get is cumbersome. One have to unwrap with a default implementation, call, then rewrap.
+In JavaScript, functions are first class objects and can be assigned to object properties. These methods can be accessed using safe navigation proxies, but working with them only using the features above is cumbersome. One have to unwrap with a default implementation, call, then rewrap.
 
-To facilitate safely navigating to and through methods, safe navigation proxies can be called as functions to effectively perform the process outlined above. In particular, calling a non-nil proxy calls the contained value as a function and wraps the return value in a safe navigation proxy; and calling a nil reference return a nil reference to an empty object.
+To facilitate safely navigating to and through methods, safe navigation proxies can be called as functions to effectively perform the process outlined above. In particular, calling a non-nil proxy calls the contained value as a function and wraps the return value in a safe navigation proxy; and calling a nil reference returns a nil reference.
 
 That is,
 
-- `$N(args)` returns `$N{{}}`
-- `$V{value}(args)` returns `$(value(args))`
+- `$N(...args)` returns `$N{{}}`
+- `$V{value}(...args)` returns `$(value(...args))`
 
 Note that if a non-nil proxy with a non-function value is called, the value will be called as a function, resulting in `TypeError` being thrown by default.
 
 ### Configuration
 
-While the sections above have detailed the default behavior of safe navigation proxies. However, their true power lies in their configurability.
+While the sections above have detailed the default behavior of safe navigation proxies, their true power lies in their configurability.
 
 #### `$.config(options)`
 
@@ -163,11 +163,11 @@ The following sections details each option.
 
 The default `$` treats `undefined` and `null` as nullish. The `isNullish` configuration changes what value(s) is/are considered nullish.
 
-If `isNullish` is an array, then a value is considered nullish if and only if it is contained within `isNullish`, determined with [`Array.prototype.includes`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes).
-
-If `isNullish` is a function, then it will be called with the value as the only argument. A value is considered nullish if and only if `isNullish(value)` returns a truthy value. Note that if `isNullish` throws, `$conf(value)` also throws with the same error.
-
-For all other values of `isNullish`, then only that value is considered nullish. Values that are the same as the `isNullish` value according to [`Object.is`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is) are nullish.
+Type/Value | Meaning
+-----------|-----------------
+`Array` | A value is considered nullish if and only if it is contained within `isNullish`, determined with [`Array.prototype.includes`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes).
+`Function` | A value is considered nullish if and only if `isNullish(value)` returns a truthy value. Note that if `isNullish` throws, `$conf(value)` also throws with the same error.
+Other | A value is considered nullish if and only if it is the same as `isNullish`, determined with [`Object.is`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is).
 
 Note that if `options.isNullish` explicitly set to or declared as `undefined`, then `null` is not considered nullish since only `undefined` is. To trigger the default behavior, make sure `options` does not have `isNullish` as an own property or use the array `[undefined, null]`.
 
@@ -181,11 +181,11 @@ $({ $: 1 }).$ // Unwrap method, not proxy with 1 as value
 
 The `noConflict` configuration can be use to avoid this. Note that regardless of this configuration, the symbol `$.$` can be used to access the unwrap method.
 
-If `noConflict` is `true`, then the unwrap method can only be accessed with `$.$`.
-
-If `noConflict` is a string or symbol, then the unwrap method can be access using that key, in addition to `$.$`.
-
-`noConflict` can also be set to an array of strings and/or symbols. In this case, each of those can be used to access the unwrap method, in addition to `$.$`.
+Type/Value | Meaning
+-----------|-----------------
+`true` | The unwrap method can only be accessed with `$.$`.
+`string` or `symbol` | The unwrap method can be access using the specified string or symbol as key, in addition to `$.$`.
+`Array` | The unwrap method can be access using any string or symbol in the array, in addition to `$.$`.
 
 ```JavaScript
 const sym = Symbol('unwrap')
@@ -193,25 +193,25 @@ const sym = Symbol('unwrap')
 let $conf = $.config({noConflict: true})
 
 // Unwrap method can be accessed as:
-$()[$.$]
+$conf()[$.$]
 
 $conf = $.config({noConflict: 'unwrap'})
 
 // Unwrap method can be accessed as:
-$().unwrap
-$()[$.$]
+$conf().unwrap
+$conf()[$.$]
 
 $conf = $.config({noConflict: sym})
 
 // Unwrap method can be accessed as:
-$()[sym]
-$()[$.$]
+$conf()[sym]
+$conf()[$.$]
 
 
 $conf = $.config({noConflict: ['unwarp', sym]})
 
 // Unwrap method can be accessed as:
-$().unwrap
-$()[sym]
-$()[$.$]
+$conf().unwrap
+$conf()[sym]
+$conf()[$.$]
 ```
