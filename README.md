@@ -215,3 +215,28 @@ $conf().unwrap
 $conf()[sym]
 $conf()[$.$]
 ```
+
+#### `options.nil`
+
+The `nil` option configures a number of behaviors of nil references.
+
+#### `options.nil.unwrap`
+
+As noted in the main documentation, the default unwrap method of nil references returns the first argument it is passed. The `nil.unwrap` option overides that.
+
+Type/Value | Meaning
+-----------|-----------------
+`Function` | The unwrap method of nil is `nil.unwrap`.
+Other | The unwrap method of nil takes no argument and returns `nil.unwrap`.
+
+```JavaScript
+let $conf = $.config({nil: {unwrap: arg => {
+	console.log(`Unwrapping nil with ${arg}`)
+}})
+
+$conf().$(42) // Logs: "Unwrapping nil with 42"
+
+$conf = $.config({nil: {unwrap: 42})
+
+console.log($conf().$()) // 42
+```
