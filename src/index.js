@@ -38,6 +38,11 @@ function config(options) {
 	const nilUnwrap = typeof options.nil.unwrap === 'function'
 		? options.nil.unwrap
 		: () => options.nil.unwrap
+	const nilApply = !options.nil.hasOwnProperty('apply')
+		? () => $N()
+		: typeof options.nil.apply === 'function'
+			? options.nil.apply
+			: () => options.nil.apply
 
 	const vHandler = {
 		get(target, prop) {
@@ -95,8 +100,8 @@ function config(options) {
 			const obase = Object(base)
 			return Reflect.set(obase, name, {[prop]: to}, obase)
 		},
-		apply() {
-			return $N()
+		apply(target, context, args) {
+			return Reflect.apply(nilApply, context, args)
 		}
 	}
 
