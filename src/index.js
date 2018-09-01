@@ -6,9 +6,7 @@ const symbols = {
 }
 
 const merge = (obj1, obj2) => {
-	if(typeof obj1 !== 'object'
-		|| typeof obj2 !== 'object' || Array.isArray(obj2)) {
-
+	if(typeof obj1 !== 'object' || typeof obj2 !== 'object' || Array.isArray(obj2)) {
 		return obj2
 	}
 
@@ -26,6 +24,10 @@ const defaults = {
 	noConflict: '$',
 	nil: {
 		unwrap: def => def
+	},
+	propagate: {
+		on: 'set',
+		value: (k, v) => ({[k]: v})
 	}
 }
 
@@ -43,6 +45,17 @@ function config(options) {
 		: typeof options.nil.apply === 'function'
 			? options.nil.apply
 			: () => options.nil.apply
+
+	let propagate
+	if(options.propagate === 'onSet') {
+		propagate = defaults.propagate
+	} else if(options.propagate === 'onGet') {
+		propagate = { on: 'get', value: () => ({}) }
+	} else if(options.propagate === 'ignore' || options.propagate === false) {
+		propagate = { on: false }
+	} else {
+		propagate = options.propagate
+	}
 
 	const vHandler = {
 		get(target, prop) {
@@ -96,9 +109,13 @@ function config(options) {
 			return $N(proxy, prop)
 		},
 		set(target, prop, to) {
+			if(propagate.on === false) {
+				return true
+			}
+			
 			const [base, name] = target()
 			const obase = Object(base)
-			return Reflect.set(obase, name, {[prop]: to}, obase)
+			return Reflect.set(obase, name, Reflect.apply(propagate.value, $N(obase, name), [prop, to]), obase)
 		},
 		apply(target, context, args) {
 			return Reflect.apply(nilApply, context, args)
@@ -115,12 +132,14 @@ function config(options) {
 			return $N(base, name)
 		}
 
-		return new Proxy(() => value, vHandler)
+		return $V(value)
 	}
 
-	function $N(base, name) {
-		return new Proxy(() => ([base, name]), nHandler)
-	}
+	function $V(value) { return new Proxy(() => value, vHandler) }
+
+	const $N = propagate.on === 'get'
+		? (base, name) => $V(base[name] = Reflect.apply(propagate.value, base, [name]))
+		: (base, name) => new Proxy(() => ([base, name]), nHandler)
 
 	return value => $(value)
 }
