@@ -252,7 +252,35 @@ let $conf = $.config({nil: {apply: arg => {
 
 $conf()(42) // Logs: "Applying nil with 42"
 
-$conf = $.config({nil: {apply: 42})
+$conf = $.config({nil: {apply: 42}})
 
 console.log($conf()()) // 42
 ```
+
+#### `options.propagate`
+
+The `propagate` configuration changes the behavior of "propagation" documented above.
+
+#### Propagate on assignment
+
+If `propagate.on` is `'set'`, then setting a property of a nil reference sets the referent to the return value of calling the `propagate.value` function with the property key and value being set as arguments and with `this` bound to the nil.
+
+That is, `$N{ref}[prop] = value` sets `ref = propagate.value.call($N{ref}, prop, value)`
+
+Recall that assignment propagates from deeply nested properties up. `$(obj).n.e.s.t = 1` calls `propagate.value('t', 1)` first.
+
+Setting `propagate` configuration to `'onSet'` is a shorthand for `{on: 'set', value: (k,v) => ({[k]: v})}`, which is the same as the default behavior.
+
+#### Propagate on access
+
+If `propagate.on` is `'get'`, then accessing a nullish property of a valued proxy sets the corresponding property of the contained value to the return value of calling the `propagate.value` function with the property key as argument and with `this` bound to the contained value.
+
+That is, assuming `value[prop]` is nullish, accessing `$V{value}[prop]` sets `value[prop] = propagate.value.call(value, prop)` and returns `$(value)[prop]`.
+
+Setting `propagate` configuration to `'onGet'` is a shorthand for `{on: 'get', value: () => ({})}`.
+
+#### No propagation
+
+If `propagate.on` is `false`, then setting a property of a nil reference does nothing.
+
+Setting `propagate` configuration to either `'ignore'` or `false` is a shorthand for `{on: false}`.
