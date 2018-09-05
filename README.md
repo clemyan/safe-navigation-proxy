@@ -51,35 +51,30 @@ console.log(proxy.non.existent.func().$()) // undefined
 
 Safe navigation proxies are, as you may have guessed, the basis of `safe-navigation-proxy`. As shown in the examples above, they allow access and other operations on nested properties of objects without throwing `TypeError`s for `undefined` or `null` intermediate values (a.k.a. safe navigation).
 
-A safe navigation proxy either
+There are two kinds of safe navigation proxies. A valued proxy contains a value, and operations on them are, in some sense, forwarded to the contained value. They are denoted `$V{value}` or `$V` in this documentation.
 
-- is a nil reference, denoted as `$N` or `$N{ref}`; or
-- contains a value. They are denoted `$V` or `$V{value}`.
+On the other hand, a nil reference represents a non-existent value. Nil references are usually created by attempting to access a non-existent or `null` property via a valued proxy. They are denoted `$N{ref}` or `$N` in this documentation.
 
-This section specifies the operations on and the behavior of safe navigation proxies.
+Notice that they are called nil **references**. While JavaScript does not have abitrary references and aliases, there are limited cases where the effect can be achieved. Using those, a nil reference `$N{ref}` can change the value being referred to by `ref`.
 
-> _You may notice that nil is said to be a **reference** above. This is an abstract concept that operations on the nil reference can modify the object being referred to (a.k.a. the referent). This is necessary to implement assignment propagation (documented below). Since JavaScript does not have reference types, the operations on nil references cannot be specified to carry out operations not possible in userland code (e.g. reassigning variables). On the other hand, how the specified effects are achieved is implementation detail._
-
-The test suite in the `test` directory is also a pretty thorough specification of `safe-navigation-proxy`.
+Some operations create "detached" nil references, denoted as `$N{{}}` -- a nil reference to an empty object literal. Operations on them cannot mutate any visible objects.
 
 ### Construction
 
 The default export of `safe-navigation-proxy` is a function that constructs a safe navigation proxy. This function is denoted as `$` below. But note that the revealing module (`dist/index.js`) and the UMD module (in revealing module mode) distributables assign this function to the global variable `safeNav` instead of `$` to prevent conflict with other libraries.
 
-`$(value)` returns a nil reference if `value` is nullish (by default, `undefined` and `null` are nullish), and a proxy containing that value otherwise.
+`$(value)` returns a detached nil if `value` is nullish (by default, `undefined` and `null` are nullish), and a valued proxy containing that value otherwise.
 
 That is
 
 - `$(value)` returns `$N{{}}` if `value` is nullish
 - `$(value)` returns `$V{value}` otherwise
 
-> _Here, we have a nil reference to an empty object literal. Since outside code cannot get a handle on that object, this is a shorthand to say operations on this nil reference will not modify any visible objects._
-
 ### Unwrapping
 
 To retrieve values from safe navigation proxies, they have an unwrap method keyed by the symbol `$.$`. By default, this method is also be keyed by the property name `$`.
 
-The unwrap method of a non-nil reference returns the contained value. The default implementation of the unwrap method of a nil reference returns the first argument it receives. This allows one to pass a "default value" argument, which is returned if the proxy is nil and ignored otherwise. Note that the argument is `undefined` if none is explicitly passed.
+The unwrap method of a valued proxy returns the contained value. By default, the unwrap method of a nil reference returns the first argument it receives. This allows one to pass a "default value" argument, which is returned if the proxy is nil and ignored otherwise. Note that the argument is `undefined` if none is explicitly passed.
 
 That is,
 
@@ -96,7 +91,11 @@ console.log($(1).$(2)) // 1
 
 ### Get
 
-Property access is the primary use case of safe navigation proxies. Getting a property of a nil reference returns a nil reference to that property. Getting a property of a non-nil proxy returns either a proxy with value equal to that property of the contained value if that is not nullish, or a nil reference to it otherwise
+Property access is the primary use case of safe navigation proxies.
+
+Getting a property of a nil reference returns another nil, referencing the corresponding property _of the former nil reference_.
+
+The results of getting a property of a valued proxy depends on the value of the corresponding property of the contained value. If that is nullish, a nil reference to that property is returned. If that is not nullish, a valued proxy containing the value of that property is returned.
 
 That is
 
@@ -108,18 +107,18 @@ Since `undefined` is nullish by default, accessing an undefined property via a s
 
 ### Set
 
-Creating nested properties is also troublesome. One often has to create a stack of empty objects in order to create a nested property. `safe-navigation-proxy` simplifies this by supporting assignment propagation.
+Like accessing deeply nested properties, creating deeply nested properties is also troublesome. In order to do so, one often has to create a stack of empty objects. `safe-navigation-proxy` simplifies this by supporting "propagation".
 
-When assignment propagation is enabled (which is the default), assigning a value to a property of a nil reference sets the referent to (by default) an object with only one own property -- the key-value pair being assigned.
+When propagation on assignment is enabled (which is the default), assigning a value to a property of a nil reference sets the referent to (by default) an object with only one own enumerable property -- the key-value pair being assigned. Then
 
-Assigning a value to a property of a non-nil proxy delegates to a normal assignment to the contained value.
+Assigning a value to a property of a valued proxy delegates to a normal assignment to the contained value.
 
 That is
 
 - Setting `$N{ref}.prop = v` sets `ref = {prop: v}`
 - Setting `$V{value}.prop = v` sets `value.prop = v`
 
-Note that this means assignment propagates from deeply nested properties up to shallow properties. Assuming `obj.a` is nullish, `$(obj).a.b.c.d = 1` is `$N{$N{$N{obj.a}.b}.c}.d = 1`. That resolves as:
+Note that this means assignment propagates from deeply nested properties to shallow properties. Assuming `obj.a` is nullish, `$(obj).a.b.c.d = 1` is `$N{$N{$N{obj.a}.b}.c}.d = 1`. That resolves as:
 
 1. `N{$N{obj.a}.b}.c = {d: 1}`
 2. `$N{obj.a}.b = {c: {d: 1}}`
@@ -131,14 +130,14 @@ This distinction is important when configuration comes into the mix.
 
 In JavaScript, functions are first class objects and can be assigned to object properties. These methods can be accessed using safe navigation proxies, but working with them only using the features above is cumbersome. One have to unwrap with a default implementation, call, then rewrap.
 
-To facilitate safely navigating to and through methods, safe navigation proxies can be called as functions to effectively perform the process outlined above. In particular, calling a non-nil proxy calls the contained value as a function and wraps the return value in a safe navigation proxy; and calling a nil reference returns a nil reference.
+To facilitate safely navigating to and through methods, safe navigation proxies can be called as functions to effectively perform the process outlined above. In particular, calling a valued proxy calls the contained value as a function and wraps the return value in a safe navigation proxy; and calling a nil reference returns a detached nil.
 
 That is,
 
 - `$N(...args)` returns `$N{{}}`
 - `$V{value}(...args)` returns `$(value(...args))`
 
-Note that if a non-nil proxy with a non-function value is called, the value will be called as a function, resulting in `TypeError` being thrown by default.
+Note that if a valued proxy containing a non-function value is called, the value will be called as a function, resulting in `TypeError` being thrown.
 
 ### Configuration
 
@@ -149,7 +148,7 @@ While the sections above have detailed the default behavior of safe navigation p
 The `$.config` function creates a configured instance of `$`
 
 ```JavaScript
-const $conf = $.config({ /* some options */ })
+const $conf = $.config(options)
 
 // Then $conf can be used in place of $
 const value = $conf(obj).n.e.s.t.e.d.$()
@@ -191,25 +190,21 @@ Type/Value | Meaning
 const sym = Symbol('unwrap')
 
 let $conf = $.config({noConflict: true})
-
 // Unwrap method can be accessed as:
 $conf()[$.$]
 
 $conf = $.config({noConflict: 'unwrap'})
-
 // Unwrap method can be accessed as:
 $conf().unwrap
 $conf()[$.$]
 
 $conf = $.config({noConflict: sym})
-
 // Unwrap method can be accessed as:
 $conf()[sym]
 $conf()[$.$]
 
 
 $conf = $.config({noConflict: ['unwarp', sym]})
-
 // Unwrap method can be accessed as:
 $conf().unwrap
 $conf()[sym]
@@ -222,7 +217,7 @@ The `nil` configuration modifies a number of behaviors of nil references.
 
 #### `options.nil.unwrap`
 
-As noted in the main documentation, the default unwrap method of nil references returns the first argument it is passed. The `nil.unwrap` configuration overides that.
+As noted above, the default unwrap method of nil references simply returns the first argument it is passed. The `nil.unwrap` configuration replaces the implementation.
 
 Type/Value | Meaning
 -----------|-----------------
@@ -236,14 +231,14 @@ let $conf = $.config({nil: {unwrap: arg => {
 
 $conf().$(42) // Logs: "Unwrapping nil with 42"
 
-$conf = $.config({nil: {unwrap: 42})
+$conf = $.config({nil: {unwrap: 42}})
 
 console.log($conf().$()) // 42
 ```
 
 #### `options.nil.apply`
 
-By default, calling a nil reference as a function returns a nil reference. The `nil.apply` configuration replaces that implementation.
+By default, calling a nil reference as a function simply returns a detached nil. The `nil.apply` configuration replaces that implementation.
 
 Type/Value | Meaning
 -----------|-----------------
