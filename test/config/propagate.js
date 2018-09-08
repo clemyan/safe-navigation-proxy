@@ -108,6 +108,7 @@ describe("onGet", () => {
 		it("should call value with correct arguments", () => {
 			const obj = {}
 			const sym = Symbol()
+			fn.mockImplementation(() => ({}))
 
 			$conf(obj).n.e.s.t[sym]
 			expect(fn).toBeCalledTimes(5)
