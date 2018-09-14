@@ -5,10 +5,13 @@ const symbols = {
 	// #endif
 }
 
+const asFunction = value => typeof value === 'function' ? value : () => value
+
 const defaults = {
 	isNullish: value => value === undefined || value === null,
 	noConflict: prop => prop === symbols.$ || prop === '$',
 	nil: {
+		// apply
 		unwrap: def => def
 	},
 	propagate: {
@@ -17,12 +20,54 @@ const defaults = {
 	}
 }
 
-const asFunction = value =>
-	typeof value === 'function' ? value : () => value
+const canonicalize = {
+	isNullish: value => {
+		if(Array.isArray(value)) {
+			return Array.prototype.includes.bind(value)
+		} else if(typeof value === 'function') {
+			return value
+		} else {
+			return Object.is.bind(null, value)
+		}
+	},
+	noConflict: value => {
+		if(Array.isArray(value)) {
+			return prop => prop === symbols.$ || value.includes(prop)
+		} else if(typeof value === 'function') {
+			return value
+		} else {
+			return prop => prop === symbols.$ || prop === value
+		}
+	},
+	nil: {
+		unwrap: asFunction,
+		apply: asFunction
+	},
+	propagate: value => {
+		if(value === 'onSet') {
+			return defaults.propagate
+		} else if(value === 'onGet') {
+			return { on: 'get', value: () => ({}) }
+		} else if(value === 'ignore' || value === false) {
+			return { on: false }
+		} else {
+			return value
+		}
+	}
+}
+const merge = (obj1, obj2, funcs = canonicalize) => {
+	const temp = {}
+	for(const key in funcs) {
+		if(Object.prototype.hasOwnProperty.call(obj2, key)) {
+			temp[key] = typeof funcs[key] === 'function'
+				? funcs[key](obj2[key])
+				: merge(obj1[key], obj2[key], funcs[key])
+		}
+	}
+	return Object.assign({}, obj1, temp)
+}
 
-const instance = options => {
-	const config = {nil: {}, propagate: {}}
-
+const instance = config => {
 	// Valued proxy handler
 	const vHandler = {
 		get(target, prop) {
@@ -34,7 +79,7 @@ const instance = options => {
 			if(prop === symbols._) {
 				return {
 					safeNav: true,
-					config: options,
+					config: config,
 					nil: false,
 					value: target()
 				}
@@ -69,14 +114,14 @@ const instance = options => {
 			if(prop === symbols._) {
 				return {
 					safeNav: true,
-					config: options,
+					config: config,
 					nil: true,
 					set: val => Object(base)[name] = val
 				}
 			}
 			// #endif
 
-			return base === undefined ? $N() : $N(proxy, prop)
+			return base === undefined || config.propagate.on === false ? $N() : $N(proxy, prop)
 		},
 		set(target, prop, to) {
 			if(config.propagate.on === false) {
@@ -112,58 +157,16 @@ const instance = options => {
 		? $D
 		: new Proxy(() => [base, name], nHandler)
 
-	// Canonicalize config
-	if(Array.isArray(options.isNullish)) {
-		config.isNullish = Array.prototype.includes.bind(options.isNullish)
-	} else if(typeof options.isNullish === 'function') {
-		config.isNullish = options.isNullish
-	} else {
-		config.isNullish = Object.is.bind(null, options.isNullish)
-	}
+	if(!config.nil.apply)
+		config.nil.apply = () => $D
 
-	if(Array.isArray(options.noConflict)) {
-		config.noConflict = prop => prop === symbols.$ || options.noConflict.includes(prop)
-	} else if(typeof options.noConflict === 'function') {
-		config.noConflict = options.noConflict
-	} else {
-		config.noConflict = prop => prop === symbols.$ || prop === options.noConflict
-	}
+	const $ = value => $P(value)
+	$.config = options => instance(merge(config, options))
 
-	config.nil.unwrap = asFunction(options.nil.unwrap)
-	config.nil.apply = Reflect.getOwnPropertyDescriptor(options.nil, 'apply')
-		? asFunction(options.nil.apply)
-		: () => $D
-	
-	if(options.propagate === 'onSet') {
-		config.propagate = defaults.propagate
-	} else if(options.propagate === 'onGet') {
-		config.propagate = { on: 'get', value: () => ({}) }
-	} else if(options.propagate === 'ignore' || options.propagate === false) {
-		config.propagate = { on: false }
-	} else {
-		config.propagate = options.propagate
-	}
-
-	return value => $P(value)
-}
-
-const merge = (obj1, obj2) => {
-	if(typeof obj1 !== 'object' || typeof obj2 !== 'object' || Array.isArray(obj2)) {
-		return obj2
-	}
-
-	const common = {}
-	for(const key in obj2) {
-		if(obj1.hasOwnProperty(key) && obj2.hasOwnProperty(key)) {
-			common[key] = merge(obj1[key], obj2[key])
-		}
-	}
-
-	return Object.assign({}, obj1, obj2, common)
+	return $
 }
 
 const $ = instance(defaults)
-$.config = options => instance(merge(defaults, options))
 Object.assign($, symbols)
 
 export default $
