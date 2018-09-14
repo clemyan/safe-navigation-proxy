@@ -1,15 +1,11 @@
-const symbols = {
-	$: Symbol('unwrap'),
-	// #if REFLECT
-	_: Symbol('reflect')
-	// #endif
-}
+const symUnwrap = Symbol()
+const symReflect = Symbol()
 
 const asFunction = value => typeof value === 'function' ? value : () => value
 
 const defaults = {
 	isNullish: value => value === undefined || value === null,
-	noConflict: prop => prop === symbols.$ || prop === '$',
+	noConflict: prop => prop === symUnwrap || prop === '$',
 	nil: {
 		// apply
 		unwrap: def => def
@@ -32,11 +28,11 @@ const canonicalize = {
 	},
 	noConflict: value => {
 		if(Array.isArray(value)) {
-			return prop => prop === symbols.$ || value.includes(prop)
+			return prop => prop === symUnwrap || value.includes(prop)
 		} else if(typeof value === 'function') {
 			return value
 		} else {
-			return prop => prop === symbols.$ || prop === value
+			return prop => prop === symUnwrap || prop === value
 		}
 	},
 	nil: {
@@ -76,7 +72,7 @@ const instance = config => {
 			}
 
 			// #if REFLECT
-			if(prop === symbols._) {
+			if(prop === symReflect) {
 				return {
 					safeNav: true,
 					config: config,
@@ -96,7 +92,7 @@ const instance = config => {
 		apply(target, context, args) {
 			return $P(Reflect.apply(
 				target(),
-				context ? context[symbols.$]() : context,
+				context ? context[symUnwrap]() : context,
 				args))
 		}
 	}
@@ -111,7 +107,7 @@ const instance = config => {
 			const [base, name] = target()
 
 			// #if REFLECT
-			if(prop === symbols._) {
+			if(prop === symReflect) {
 				return {
 					safeNav: true,
 					config: config,
@@ -167,6 +163,9 @@ const instance = config => {
 }
 
 const $ = instance(defaults)
-Object.assign($, symbols)
+$[Symbol.toPrimitive] = () => symUnwrap
+// #if REFLECT
+$._ = symReflect
+// #endif
 
 export default $

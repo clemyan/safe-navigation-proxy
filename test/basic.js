@@ -5,38 +5,38 @@ describe("Basic wrap & unwrap", () => {
 	it("should return the value of a non-nil proxy", () => {
 		const obj = {}
 		expect($(obj).$()).toBe(obj)
-		expect($(obj)[$.$]()).toBe(obj)
+		expect($(obj)[$]()).toBe(obj)
 		expect($(obj).$(1)).toBe(obj)
-		expect($(obj)[$.$](1)).toBe(obj)
+		expect($(obj)[$](1)).toBe(obj)
 	})
 
 	it("should return the value if falsy but not nullish", () => {
 		expect($(false).$(true)).toBe(false)
-		expect($(false)[$.$](true)).toBe(false)
+		expect($(false)[$](true)).toBe(false)
 		expect($(0).$(1)).toBe(0)
-		expect($(0)[$.$](1)).toBe(0)
+		expect($(0)[$](1)).toBe(0)
 	})
 
 	it("should return undefined for undefined nil", () => {
 		expect($(undefined).$()).toBeUndefined()
-		expect($(undefined)[$.$]()).toBeUndefined()
+		expect($(undefined)[$]()).toBeUndefined()
 	})
 
 	it("should return the given default value for undefined nil", () => {
 		const obj = {}
 		expect($(undefined).$(obj)).toBe(obj)
-		expect($(undefined)[$.$](obj)).toBe(obj)
+		expect($(undefined)[$](obj)).toBe(obj)
 	})
 
 	it("should return undefined for null nil", () => {
 		expect($(null).$()).toBeUndefined()
-		expect($(null)[$.$]()).toBeUndefined()
+		expect($(null)[$]()).toBeUndefined()
 	})
 
 	it("should return the given default value for null nil", () => {
 		const obj = {}
 		expect($(null).$(obj)).toBe(obj)
-		expect($(null)[$.$](obj)).toBe(obj)
+		expect($(null)[$](obj)).toBe(obj)
 	})
 })
 

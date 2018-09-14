@@ -9,7 +9,7 @@ const obj = {n: {e: {s: {t: {
 	notUnwrap:      {},
 	[symNotUnwrap]: {},
 	$:              {},
-	[$.$]:          {},
+	[$]:            {},
 }}}}}
 
 function testUnwrap($conf, prop) {
@@ -44,11 +44,11 @@ describe.each([
 		testNotUnwrap($conf, prop)
 	})
 
-	it("should not be able to unwrap with $", () => {
+	it("should not be able to unwrap with '$'", () => {
 		testNotUnwrap($conf, '$')
 	})
 
-	it("should still be able to unwrap with $.$", () => {
-		testUnwrap($conf, $.$)
+	it("should still be able to unwrap with $", () => {
+		testUnwrap($conf, $)
 	})
 })
