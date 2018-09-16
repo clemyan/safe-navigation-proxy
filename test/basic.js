@@ -1,5 +1,5 @@
-import $ from '../src/index.js'
-import './utils/matchers.js'
+import $ from 'src/index.js'
+import 'test/utils/matchers.js'
 
 describe("Basic wrap & unwrap", () => {
 	it("should return the value of a non-nil proxy", () => {

@@ -1,6 +1,5 @@
-import $ from '../../src/index.js'
-import '../utils/matchers.js'
-
+import $ from 'src/index.js'
+import 'test/utils/matchers.js'
 
 function nil($conf) {
 	return $conf({}).u.v.w

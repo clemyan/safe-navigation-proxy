@@ -1,4 +1,4 @@
-import $ from '../../src/index.js'
+import $ from 'src/index.js'
 
 expect.extend({
 	toBeSafeNav(received, expected) {

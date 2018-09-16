@@ -1,5 +1,5 @@
-import $ from '../../src/index.js'
-import '../utils/matchers.js'
+import $ from 'src/index.js'
+import 'test/utils/matchers.js'
 
 describe("onSet", () => {
 	describe("without value", () => {
