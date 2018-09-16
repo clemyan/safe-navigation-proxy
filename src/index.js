@@ -1,3 +1,6 @@
+// Uses process.env.NODE_ENV to remove non-production code with rollup
+/* global process */
+
 const symUnwrap = Symbol()
 const symReflect = Symbol()
 
@@ -71,8 +74,7 @@ const instance = config => {
 				return target
 			}
 
-			// #if REFLECT
-			if(prop === symReflect) {
+			if(process.env.NODE_ENV === 'test' && prop === symReflect) {
 				return {
 					safeNav: true,
 					config: config,
@@ -80,7 +82,6 @@ const instance = config => {
 					value: target()
 				}
 			}
-			// #endif
 
 			const value = Object(target())
 			return $P(value[prop], value, prop)
@@ -106,8 +107,7 @@ const instance = config => {
 
 			const [base, name] = target()
 
-			// #if REFLECT
-			if(prop === symReflect) {
+			if(process.env.NODE_ENV === 'test' && prop === symReflect) {
 				return {
 					safeNav: true,
 					config: config,
@@ -115,9 +115,9 @@ const instance = config => {
 					set: val => Object(base)[name] = val
 				}
 			}
-			// #endif
 
-			return base === undefined || config.propagate.on === false ? $N() : $N(proxy, prop)
+			return base === undefined || config.propagate.on === false
+				? $N() : $N(proxy, prop)
 		},
 		set(target, prop, to) {
 			if(config.propagate.on === false) {
@@ -150,11 +150,11 @@ const instance = config => {
 
 	const $D = new Proxy(() => [], nHandler) // Detached nil
 	const $N = (base, name) => Object(base) !== base
-		? $D
-		: new Proxy(() => [base, name], nHandler)
+		? $D : new Proxy(() => [base, name], nHandler)
 
-	if(!config.nil.apply)
+	if(!config.nil.apply) {
 		config.nil.apply = () => $D
+	}
 
 	const $ = value => $P(value)
 	$.config = options => instance(merge(config, options))
@@ -164,8 +164,8 @@ const instance = config => {
 
 const $ = instance(defaults)
 $[Symbol.toPrimitive] = () => symUnwrap
-// #if REFLECT
-$._ = symReflect
-// #endif
+if(process.env.NODE_ENV === 'test') {
+	$._ = symReflect
+}
 
 export default $

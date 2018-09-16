@@ -8,10 +8,8 @@ module.exports = {
 	],
 	plugins: [
 		require('rollup-plugin-babel-minify')({comments: false}),
-		require('rollup-plugin-re')({
-			defines: {
-				REFLECT: false
-			}
+		require('rollup-plugin-replace')({
+			'process.env.NODE_ENV': JSON.stringify('production')
 		})
 	],
 	watch: {
