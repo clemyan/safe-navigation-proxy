@@ -3,6 +3,7 @@ module.exports = {
 	rules: {
 		'indent': ['error', 'tab'],
 		'linebreak-style': ['error', 'unix'],
+		'eol-last': ['error', 'always'],
 		'semi': ['error', 'never'],
 		'space-before-blocks': ['error'],
 		'key-spacing': ['error', {mode: 'minimum'}],
