@@ -3,14 +3,16 @@
 
 const symUnwrap = Symbol()
 const symReflect = Symbol()
+const ref$D = {}
 
-const asFunction = value => typeof value === 'function' ? value : () => value
+const isFunction = value => typeof value === 'function'
+const asFunction = value => isFunction(value) ? value : () => value
 
 const defaults = {
 	isNullish: value => value === undefined || value === null,
 	noConflict: prop => prop === symUnwrap || prop === '$',
 	nil: {
-		// apply
+		apply: () => ref$D,
 		unwrap: def => def
 	},
 	propagate: {
@@ -23,7 +25,7 @@ const canonicalize = {
 	isNullish: value => {
 		if(Array.isArray(value)) {
 			return Array.prototype.includes.bind(value)
-		} else if(typeof value === 'function') {
+		} else if(isFunction(value)) {
 			return value
 		} else {
 			return Object.is.bind(null, value)
@@ -32,7 +34,7 @@ const canonicalize = {
 	noConflict: value => {
 		if(Array.isArray(value)) {
 			return prop => prop === symUnwrap || value.includes(prop)
-		} else if(typeof value === 'function') {
+		} else if(isFunction(value)) {
 			return value
 		} else {
 			return prop => prop === symUnwrap || prop === value
@@ -67,7 +69,8 @@ const merge = (obj1, obj2, funcs = canonicalize) => {
 }
 
 const instance = config => {
-	// Valued proxy handler
+	const havePropagation = base => Object(base) === base && config.propagate.on === 'set'
+
 	const vHandler = {
 		get(target, prop) {
 			if(config.noConflict(prop)) {
@@ -83,24 +86,26 @@ const instance = config => {
 				}
 			}
 
-			const value = Object(target())
-			return $P(value[prop], value, prop)
+			const base = target()
+			let value = base[prop]
+
+			if(isFunction(value)) {
+				value = Function.prototype.bind.call(value, base)
+			}
+
+			return $P(value, base, prop)
 		},
 		set(target, prop, to) {
-			const value = Object(target())
-			return Reflect.set(value, prop, to, value)
+			const value = target()
+			return Reflect.set(Object(value), prop, to, value)
 		},
 		apply(target, context, args) {
-			return $P(Reflect.apply(
-				target(),
-				context ? context[symUnwrap]() : context,
-				args))
+			return $P(Reflect.apply(target(), context, args))
 		}
 	}
 
-	// Nil handler
 	const nHandler = {
-		get(target, prop, proxy) {
+		get(target, prop) {
 			if(config.noConflict(prop)) {
 				return config.nil.unwrap
 			}
@@ -116,45 +121,40 @@ const instance = config => {
 				}
 			}
 
-			return base === undefined || config.propagate.on === false
-				? $N() : $N(proxy, prop)
+			return havePropagation(base) ? $N($N(base, name), prop) : $D
 		},
 		set(target, prop, to) {
-			if(config.propagate.on === false) {
+			const [base, name] = target()
+			if(!havePropagation(base)) {
 				return true
 			}
 			
-			const [base, name] = target()
-			const obase = Object(base)
 			return Reflect.set(
-				obase,
+				base,
 				name,
-				Reflect.apply(config.propagate.value, $N(obase, name), [prop, to]),
-				obase)
+				Reflect.apply(config.propagate.value, $N(base, name), [prop, to]),
+				base)
 		},
 		apply(target, context, args) {
-			return Reflect.apply(config.nil.apply, context, args)
+			const value = Reflect.apply(config.nil.apply, context, args)
+			return value === ref$D ? $D : value
 		}
 	}
 
-	// Proxy factories
+	// Proxy factory
 	const $P = (value, base, name) => {
 		if(config.propagate.on === 'get' && config.isNullish(value)) {
-			const obase = Object(base)
-			value = obase[name] = Reflect.apply(config.propagate.value, obase, [name])
+			value = Object(base)[name] = Reflect.apply(config.propagate.value, base, [name])
 		}
 		return config.isNullish(value) ? $N(base, name) : $V(value)
 	}
 
+	// Valued proxy factory
 	const $V = value => new Proxy(() => value, vHandler)
-
-	const $D = new Proxy(() => [], nHandler) // Detached nil
-	const $N = (base, name) => Object(base) !== base
-		? $D : new Proxy(() => [base, name], nHandler)
-
-	if(!config.nil.apply) {
-		config.nil.apply = () => $D
-	}
+	// Nil factory
+	const $N = (base, name) => new Proxy(() => [base, name], nHandler)
+	// Shared detached nil instance
+	const $D = $N()
 
 	const $ = value => $P(value)
 	$.config = options => instance(merge(config, options))
