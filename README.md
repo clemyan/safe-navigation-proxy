@@ -4,7 +4,7 @@ Safe navigation using ES2015 Proxies
 
 This is a WIP
 
-## Installation and Usage
+## Installation
 
 For the time being, you must clone/download the repo and build it yourself.
 
@@ -20,6 +20,16 @@ $ npm run build
 The build output is in the `dist` directory. `dist/index.js` is in the revealing module pattern. I.e. it is an IIFE whose return value is assigned to a global variable, which makes it suitable for use in a browser environment. In this case, a function is assigned to `safeNav` (documented below as `$`).
 
 Files for other module loader styles are also available in the respective directories.
+
+## Caveats
+
+### Support
+
+`safe-navigation-proxy` only supports environments that supports both [ES2015 Proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy#Browser_compatibility) and [Symbol.toPrimitive](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/toPrimitive#Browser_compatibility).
+
+### Performance
+
+While `safe-navigation-proxy` is written with performance (time and memory) in mind, the overhead of using Proxies is unavoidable. For performance-critical code. Use plain conditionals to check for `undefined` and `null` intermediate values.
 
 ## Example
 
@@ -38,7 +48,8 @@ console.log(proxy.non.existent.property.$()) // undefined
 console.log(proxy.non.existent.property.$(2)) // 2
 
 // Set
-proxy.x.y.z = 2 // Now obj.x is {y: {z: 2}}
+proxy.x.y.z = 2
+console.log(JSON.stringify(obj.x)) // {"y":{"z":2}}
 
 // Apply
 console.log(proxy.n.e.s.t.e.d.func().$()) // 1
@@ -57,7 +68,7 @@ On the other hand, a nil reference represents a non-existent value. Nil referenc
 
 Notice that they are called nil **references**. While JavaScript does not have abitrary references and aliases, there are limited cases where the effect can be achieved. Using those, a nil reference `$N{ref}` can change the value being referred to by `ref`.
 
-Some operations create "detached" nil references, denoted as `$N{{}}` -- a nil reference to an empty object literal. Operations on them cannot mutate any visible objects.
+Some operations create "detached" nil references, denoted as `$N{}`. Operations on them cannot mutate any visible objects.
 
 ### Construction
 
@@ -67,19 +78,19 @@ The default export of `safe-navigation-proxy` is a function that constructs a sa
 
 That is
 
-- `$(value)` returns `$N{{}}` if `value` is nullish
+- `$(value)` returns `$N{}` if `value` is nullish
 - `$(value)` returns `$V{value}` otherwise
 
 ### Unwrapping
 
-To retrieve values from safe navigation proxies, they have an unwrap method keyed by the symbol `$.$`. By default, this method is also be keyed by the property name `$`.
+To retrieve values from safe navigation proxies, they have an unwrap method. It is accessible as a property of safe navigation proxies whose key is `$` itself (i.e. `$(...)[$]`). By default, it is also accessible as the `$` property of safe navigation proxies (i.e. `$(...).$`).
 
 The unwrap method of a valued proxy returns the contained value. By default, the unwrap method of a nil reference returns the first argument it receives. This allows one to pass a "default value" argument, which is returned if the proxy is nil and ignored otherwise. Note that the argument is `undefined` if none is explicitly passed.
 
 That is,
 
-- `$N.$(def)` and `$N[$.$](def)` returns `def`
-- `$V{value}.$(def)` and `$V{value}[$.$](def)` returns `value`
+- `$N.$(def)` and `$N[$](def)` returns `def`
+- `$V{value}.$(def)` and `$V{value}[$](def)` returns `value`
 
 Note that this allows safe navigation proxies to be used for nullish-coalescing
 
@@ -130,11 +141,11 @@ This distinction is important when configuration comes into the mix.
 
 In JavaScript, functions are first class objects and can be assigned to object properties. These methods can be accessed using safe navigation proxies, but working with them only using the features above is cumbersome. One have to unwrap with a default implementation, call, then rewrap.
 
-To facilitate safely navigating to and through methods, safe navigation proxies can be called as functions to effectively perform the process outlined above. In particular, calling a valued proxy calls the contained value as a function and wraps the return value in a safe navigation proxy; and calling a nil reference returns a detached nil.
+To facilitate safely navigating to and through methods, safe navigation proxies can be called as functions to effectively perform the process outlined above. In particular, calling a valued proxy calls the contained value as a function and wraps the return value in a safe navigation proxy; and calling a nil reference returns a detached nil by default.
 
 That is,
 
-- `$N(...args)` returns `$N{{}}`
+- `$N(...args)` returns `$N{}`
 - `$V{value}(...args)` returns `$(value(...args))`
 
 Note that if a valued proxy containing a non-function value is called, the value will be called as a function, resulting in `TypeError` being thrown.
@@ -156,6 +167,31 @@ const value = $conf(obj).n.e.s.t.e.d.$()
 
 Any safe navigation proxy created from operations on a configured proxy also inherits the configuration. So, proxies in a get/apply chain exhibits the same behavior.
 
+Available options are
+
+```
+{
+	isNullish?: Array | function | any,
+	noConflict?: true | string | symbol | Array,
+	nil?: {
+		unwrap?: function | any
+		apply?: function | any
+	},
+	propagate?: {
+		on: 'set' | 'get',
+		value: function
+	} | {
+		on: false
+	} | 'onSet' | 'onGet' | 'ignore' | false
+}
+```
+
+A configured instance can be further configured, the options will be merged.
+
+```JavaScript
+const $conf = $.config(options1).config(options2)
+```
+
 The following sections details each option.
 
 #### `options.isNullish`
@@ -165,50 +201,50 @@ The default `$` treats `undefined` and `null` as nullish. The `isNullish` config
 Type/Value | Meaning
 -----------|-----------------
 `Array` | A value is considered nullish if and only if it is contained within `isNullish`, determined with [`Array.prototype.includes`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes).
-`Function` | A value is considered nullish if and only if `isNullish(value)` returns a truthy value. Note that if `isNullish` throws, `$conf(value)` also throws with the same error.
+`function` | A value is considered nullish if and only if `isNullish(value)` returns a truthy value. Note that if `isNullish` throws, `$conf(value)` also throws with the same error.
 Other | A value is considered nullish if and only if it is the same as `isNullish`, determined with [`Object.is`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is).
 
 Note that if `options.isNullish` explicitly set to or declared as `undefined`, then `null` is not considered nullish since only `undefined` is. To trigger the default behavior, make sure `options` does not have `isNullish` as an own property or use the array `[undefined, null]`.
 
 #### `options.noConflict`
 
-By default, one can access the unwrap method of a safe navigation proxy using the symbol `$.$` (i.e. `$(...)[$.$]`) or the `$` property (i.e. `$(...).$`). However, the latter may clash with the underlying value if it has a `$` property. In this case, the unwrap method "shadows" that property.
+By default, one can access the unwrap method of a safe navigation proxy as the properties whose keys are `$` and `'$'` (i.e.`$(...)[$]` and `$(...).$`). However, the latter may clash with the underlying value if it has a `$` property. In this case, the unwrap method "shadows" that property.
 
 ```JavaScript
 $({ $: 1 }).$ // Unwrap method, not proxy with 1 as value
 ```
 
-The `noConflict` configuration can be use to avoid this. Note that regardless of this configuration, the symbol `$.$` can be used to access the unwrap method.
+The `noConflict` configuration can be used to avoid this. Note that regardless of this configuration, the the unwrap method can always be accessed with `$` itself.
 
 Type/Value | Meaning
 -----------|-----------------
-`true` | The unwrap method can only be accessed with `$.$`.
-`string` or `symbol` | The unwrap method can be access using the specified string or symbol as key, in addition to `$.$`.
-`Array` | The unwrap method can be access using any string or symbol in the array, in addition to `$.$`.
+`true` | The unwrap method can only be accessed with `$`.
+`string` or `symbol` | The unwrap method can be access using the specified string or symbol as key, in addition to `$`.
+`Array` | The unwrap method can be access using any string or symbol in the array, in addition to `$`.
 
 ```JavaScript
 const sym = Symbol('unwrap')
 
 let $conf = $.config({noConflict: true})
 // Unwrap method can be accessed as:
-$conf()[$.$]
+$conf()[$]
 
 $conf = $.config({noConflict: 'unwrap'})
 // Unwrap method can be accessed as:
 $conf().unwrap
-$conf()[$.$]
+$conf()[$]
 
 $conf = $.config({noConflict: sym})
 // Unwrap method can be accessed as:
 $conf()[sym]
-$conf()[$.$]
+$conf()[$]
 
 
 $conf = $.config({noConflict: ['unwarp', sym]})
 // Unwrap method can be accessed as:
 $conf().unwrap
 $conf()[sym]
-$conf()[$.$]
+$conf()[$]
 ```
 
 #### `options.nil`
@@ -217,11 +253,11 @@ The `nil` configuration modifies a number of behaviors of nil references.
 
 #### `options.nil.unwrap`
 
-As noted above, the default unwrap method of nil references simply returns the first argument it is passed. The `nil.unwrap` configuration replaces the implementation.
+The default unwrap method of nil references simply returns the first argument it is passed. The `nil.unwrap` configuration replaces the implementation.
 
 Type/Value | Meaning
 -----------|-----------------
-`Function` | The unwrap method of nil is `nil.unwrap`.
+`function` | The unwrap method of nil is `nil.unwrap`.
 Other | The unwrap method of nil takes no argument and returns `nil.unwrap`.
 
 ```JavaScript
@@ -242,7 +278,7 @@ By default, calling a nil reference as a function simply returns a detached nil.
 
 Type/Value | Meaning
 -----------|-----------------
-`Function` | Calling a nil reference as a function calls `nil.apply`.
+`function` | Calling a nil reference as a function calls `nil.apply`.
 Other | Calling a nil reference as a function returns `nil.apply`.
 
 ```JavaScript
@@ -263,11 +299,11 @@ The `propagate` configuration changes the behavior of "propagation" documented a
 
 #### Propagate on assignment
 
-If `propagate.on` is `'set'`, then setting a property of a nil reference sets the referent to the return value of calling the `propagate.value` function with the property key and value being set as arguments and with `this` bound to the nil.
+If `propagate.on` is `'set'`, then setting a property of a nil reference sets the referent to the return value of calling the `propagate.value` function with the property key and value as arguments and with `this` bound to the nil.
 
 That is, `$N{ref}[prop] = value` sets `ref = propagate.value.call($N{ref}, prop, value)`
 
-Recall that assignment propagates from deeply nested properties up. `$(obj).n.e.s.t = 1` calls `propagate.value('t', 1)` first.
+Recall that assignment propagates from deeply nested properties up. If `obj.n` is nullish, `$(obj).n.e.s.t = 1` calls `propagate.value` with args `('t', 1)` first.
 
 Setting `propagate` configuration to `'onSet'` is a shorthand for `{on: 'set', value: (k,v) => ({[k]: v})}`, which is the same as the default behavior.
 
@@ -276,6 +312,8 @@ Setting `propagate` configuration to `'onSet'` is a shorthand for `{on: 'set', v
 If `propagate.on` is `'get'`, then accessing a nullish property of a valued proxy sets the corresponding property of the contained value to the return value of calling the `propagate.value` function with the property key as argument and with `this` bound to the contained value.
 
 That is, assuming `value[prop]` is nullish, accessing `$V{value}[prop]` sets `value[prop] = propagate.value.call(value, prop)` and returns `$(value)[prop]`.
+
+Note that if `propagate.value` never returns a nullish value, then `$conf` is incapable of creating nil references. If `propagate.value` return a nullish values, then the resulting nils does not have propagation
 
 Setting `propagate` configuration to `'onGet'` is a shorthand for `{on: 'get', value: () => ({})}`.
 
