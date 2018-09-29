@@ -8,6 +8,8 @@ const ref$D = {}
 const isFunction = value => typeof value === 'function'
 const asFunction = value => isFunction(value) ? value : () => value
 
+const arrayIncludes = Array.prototype.includes
+
 const defaults = {
 	isNullish: value => value === undefined || value === null,
 	noConflict: prop => prop === symUnwrap || prop === '$',
@@ -24,7 +26,7 @@ const defaults = {
 const canonicalize = {
 	isNullish: value => {
 		if(Array.isArray(value)) {
-			return Array.prototype.includes.bind(value)
+			return arrayIncludes.bind(value)
 		} else if(isFunction(value)) {
 			return value
 		} else {
@@ -33,7 +35,7 @@ const canonicalize = {
 	},
 	noConflict: value => {
 		if(Array.isArray(value)) {
-			return prop => prop === symUnwrap || value.includes(prop)
+			return prop => prop === symUnwrap || arrayIncludes.call(value, prop)
 		} else if(isFunction(value)) {
 			return value
 		} else {
