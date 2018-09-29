@@ -1,6 +1,6 @@
 {
   "name": "safe-navigation-proxy",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Proxy-based safe navigation",
   "main": "dist/cjs/index.js",
   "module": "dist/es/index.js",
