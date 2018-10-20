@@ -1,25 +1,47 @@
-# [WIP] safe-navigation-proxy
+# safe-navigation-proxy
+
+[![npm](https://img.shields.io/npm/v/safe-navigation-proxy.svg?longCache=true&style=flat-square)](https://www.npmjs.com/package/safe-navigation-proxy)
+[![npm bundle size (minified + gzip)](https://img.shields.io/bundlephobia/minzip/safe-navigation-proxy.svg?longCache=true&style=flat-square&label=min%2Bgzip)](https://bundlephobia.com/result?p=safe-navigation-proxy)
+[![GitHub](https://img.shields.io/github/license/clemyan/safe-navigation-proxy.svg?longCache=true&style=flat-square)](https://github.com/clemyan/safe-navigation-proxy/blob/master/LICENSE)
 
 Safe navigation using ES2015 Proxies
 
-This is a WIP
-
 ## Installation
 
-For the time being, you must clone/download the repo and build it yourself.
-
-First, install all dependencies. Dependencies are originally managed using [`pnpm`](https://pnpm.js.org/), though `npm` and `yarn` should work fine.
+### npm
+```bash
+$ npm install safe-navigation-proxy
+# or
+$ yarn add safe-navigation-proxy
+# or
+$ pnpm install safe-navigation-proxy
 ```
-$ npm install # or yarn install or pnpm install
+
+### Browser
+```html
+<script src="https://unpkg.com/safe-navigation-proxy/dist/index.js"></script>
+```
+
+### Manual build
+
+To manually build from source, clone this Github repo.
+
+Then, install all dependencies. Dependencies are originally managed using [`pnpm`](https://pnpm.js.org/), though `npm` and `yarn` should work fine.
+```bash
+$ npm install
+# or
+$ yarn isntall
+# or
+$ pnpm install
 ```
 which should also run the build. If not, run
-```
+```bash
 $ npm run build
 ```
 
 The build output is in the `dist` directory. `dist/index.js` is in the revealing module pattern. I.e. it is an IIFE whose return value is assigned to a global variable, which makes it suitable for use in a browser environment. In this case, a function is assigned to `safeNav` (documented below as `$`).
 
-Files for other module loader styles are also available in the respective directories.
+Files for other module loader styles (ES2015, CommonJS, UMD) are also available in the respective directories.
 
 ## Caveats
 
@@ -72,7 +94,7 @@ Some operations create "detached" nil references, denoted as `$N{}`. Operations 
 
 ### Construction
 
-The default export of `safe-navigation-proxy` is a function that constructs a safe navigation proxy. This function is denoted as `$` below. But note that the revealing module (`dist/index.js`) and the UMD module (in revealing module mode) distributables assign this function to the global variable `safeNav` instead of `$` to prevent conflict with other libraries.
+The default export of `safe-navigation-proxy` is a function that constructs a safe navigation proxy. This function is documented as `$` below. But note that the revealing module (`dist/index.js`) and the UMD module (in revealing module mode) distributables assign this function to the global variable `safeNav` instead of `$` to prevent conflict with other libraries.
 
 `$(value)` returns a detached nil if `value` is nullish (by default, `undefined` and `null` are nullish), and a valued proxy containing that value otherwise.
 
